@@ -8,7 +8,7 @@ from preprocessing import KeywordPreprocessing
 class Process(ProcessLogger, KeywordSettings, KeywordPreprocessing):
     def __init__(self, job_post_path, keywords_path):
         self.loadData(keywords_path)
-        self.preprocessing(job_post_path)  # from KeyworfPreprocessing
+        self.preprocessing(job_post_path)  # from KeywordPreprocessing
         self.process()
         self.finish()
 
