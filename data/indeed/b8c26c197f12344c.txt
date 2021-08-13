@@ -1,1 +1,0 @@
-['<div id="jobDescriptionText" class="jobsearch-jobDescriptionText"><div><p><b>Additional Information</b></p><p><b>\nType:</b> Full-time</p><p>\nLocation: Montreal, QC, Canada</p><p></p><p>\nFor more information, or to submit your resumé, please e-mail NoviFlow at careers@noviflow.com</p></div></div>']
