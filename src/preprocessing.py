@@ -4,7 +4,7 @@ from common.logging import SubProcessLogger
 
 class KeywordPreprocessing(SubProcessLogger):
 
-    def preprocessing(self. path):
+    def preprocessing(self, path):
         self.loadData(path)
 
     def loadData(self, path):
