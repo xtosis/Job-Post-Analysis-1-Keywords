@@ -57,3 +57,10 @@ class KeywordPreprocessing(SubProcessLogger):
         elif ignore is False:
             print(f'prefix mismatch: {prefix} != {text[:len(prefix)]}')  # TODO LOGGING: warning
         return text
+
+    def remove_suffix(self, text, suffix, ignore=False):
+        if text[-len(suffix):] == suffix:
+            text = text[:-len(suffix)]
+        elif ignore is False:
+            print(f'suffix mismatch: {suffix} != {text[-len(suffix):]}')  # TODO LOGGING: warning
+        return text
