@@ -50,3 +50,10 @@ class KeywordPreprocessing(SubProcessLogger):
             processed[name] = cleaned_text
 
         return processed
+
+    def remove_prefix(self, text, prefix, ignore=False):
+        if text[:len(prefix)] == prefix:
+            text = text[len(prefix):]
+        elif ignore is False:
+            print(f'prefix mismatch: {prefix} != {text[:len(prefix)]}')  # TODO LOGGING: warning
+        return text
