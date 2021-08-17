@@ -64,3 +64,6 @@ class KeywordPreprocessing(SubProcessLogger):
         elif ignore is False:
             print(f'suffix mismatch: {suffix} != {text[-len(suffix):]}')  # TODO LOGGING: warning
         return text
+
+    def show_start_and_end(self, stage, file_name, text, lim):
+        print(stage, file_name, text[:lim], '...', text[-lim:])  # TODO LOGGING: debug or info
