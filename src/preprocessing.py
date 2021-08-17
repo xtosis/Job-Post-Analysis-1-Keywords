@@ -6,8 +6,10 @@ import os
 
 class KeywordPreprocessing(SubProcessLogger):
 
-    def preprocessing(self, path):
+    def preprocessing(self, path, data_format):
         raw = self.loadData(path)
+        if data_format == 'indeed_samples':
+            cleaned = self.indeedSamples(raw)
 
     def loadData(self, path):
         raw = dict()
@@ -17,5 +19,34 @@ class KeywordPreprocessing(SubProcessLogger):
                 with open(file_path, 'r', encoding='utf-8') as f:
                     name = file_path.replace(PATH_DATA, '')
                     raw[name] = f.read()
-                    print('loaded', name, raw[name][:90], '...', raw[name][-90:])
+                    self.show_start_and_end('loaded', name, raw[name], 90)
         return raw
+
+    def indeedSamples(self, raw):
+        processed = dict()
+
+        for name, cleaned_text in raw.items():
+
+            # putting '&' back
+            cleaned_text = cleaned_text.replace('&amp;', '&')
+
+            # sample files format: prefix and suffix
+            cleaned_text = self.remove_prefix(cleaned_text, "['")
+            cleaned_text = self.remove_suffix(cleaned_text, "']")
+
+            # indeed posts format: prefix and suffix
+            cleaned_text = self.remove_prefix(cleaned_text, '<div id="jobDescriptionText" class="jobsearch-jobDescriptionText">')
+            cleaned_text = self.remove_suffix(cleaned_text, '</div>')
+
+            # indeed posts format: some posts are still enclosed in div containers
+            while cleaned_text.find('<div>') == 0:
+                if cleaned_text[-6:] == '</div>':
+                    cleaned_text = self.remove_prefix(cleaned_text, '<div>', ignore=True)
+                    cleaned_text = self.remove_suffix(cleaned_text, '</div>', ignore=True)
+                else:
+                    break
+
+            self.show_start_and_end('cleaned', name, cleaned_text, 90)
+            processed[name] = cleaned_text
+
+        return processed
