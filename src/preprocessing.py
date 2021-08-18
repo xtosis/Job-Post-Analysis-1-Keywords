@@ -28,10 +28,16 @@ class KeywordPreprocessing(Preprocessing, SubProcessLogger):
 
     def preprocessing(self, path, template):
         raw = self.loadData(path)
+        process_HTML = False
 
         # templates
         if template == 'indeed_samples':
             processed = self.indeedSamplesTemplateExtract(raw)
+            process_HTML = True
+
+        # html
+        if process_HTML:
+            processed = self.standardPreprocessing_HTML_replacements(processed)
 
     def loadData(self, path):
         raw = dict()
@@ -43,6 +49,20 @@ class KeywordPreprocessing(Preprocessing, SubProcessLogger):
                     raw[name] = f.read()
                     self.show_start_and_end('loaded', name, raw[name], 90)
         return raw
+
+    def standardPreprocessing_HTML_replacements(self, text_dict):
+        processed_html = dict()
+
+        replace_dict = {'&amp;': '&',  # putting '&' back
+                        '\\n': '\n',  # replacing weird newline artifact: \\n
+                        "\'": "'"}  # replacing \'
+
+        for name, text in text_dict.items():
+            for old, new in replace_dict.items():
+                text = text.replace(old, new)
+            processed_html[name] = text
+
+        return processed_html
 
     def indeedSamplesTemplateExtract(self, text_dict):
         processed_template = dict()
