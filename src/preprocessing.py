@@ -38,6 +38,7 @@ class KeywordPreprocessing(Preprocessing, SubProcessLogger):
         # html
         if process_HTML:
             processed = self.standardPreprocessing_HTML_replacements(processed)
+            processed = self.standardPreprocessing_HTML_tags(processed)
 
     def loadData(self, path):
         raw = dict()
@@ -63,6 +64,9 @@ class KeywordPreprocessing(Preprocessing, SubProcessLogger):
             processed_html[name] = text
 
         return processed_html
+
+    def standardPreprocessing_HTML_tags(self, text_dict):
+        return text_dict
 
     def indeedSamplesTemplateExtract(self, text_dict):
         processed_template = dict()
