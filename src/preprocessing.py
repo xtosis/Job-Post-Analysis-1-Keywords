@@ -100,6 +100,22 @@ class Preprocessing:
 
         return removed_tags
 
+    def final_clean_up(self, text_dict):
+        cleaned = dict()
+
+        for name, text in text_dict.items():
+
+            size_start = len(text)
+
+            for char in ('\n', ' '):
+                text = self.remove_doubled(text, char)
+            cleaned[name] = text
+
+            size_end = len(text)
+            print('final clean up', name, size_start, 'to', size_end)  # TODO LOGGING: debug
+
+        return cleaned
+
 
 class KeywordPreprocessing(Preprocessing, SubProcessLogger):
 
@@ -116,6 +132,8 @@ class KeywordPreprocessing(Preprocessing, SubProcessLogger):
         if process_HTML:
             processed = self.standardPreprocessing_HTML_replacements(processed)
             processed = self.standardPreprocessing_HTML_tags(processed)
+
+        processed = self.final_clean_up(processed)
 
     def loadData(self, path):
         raw = dict()
