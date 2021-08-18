@@ -49,6 +49,12 @@ class Preprocessing:
 
         return tags
 
+    def remove_doubled(self, text, char):
+        remove = f'{char}{char}'
+        while text.find(remove) > -1:
+            text = text.replace(remove, char)
+        return text
+
 
 class KeywordPreprocessing(Preprocessing, SubProcessLogger):
 
