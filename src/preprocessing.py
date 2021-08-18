@@ -2,6 +2,9 @@ from common.utils import PICKLE_LOAD
 from common.logging import SubProcessLogger
 from common.paths import PATH_DATA
 import os
+import pandas as pd
+import re
+import copy
 
 
 class Preprocessing:
@@ -22,6 +25,29 @@ class Preprocessing:
 
     def show_start_and_end(self, stage, file_name, text, lim):
         print(stage, file_name, text[:lim], '...', text[-lim:])  # TODO LOGGING: debug or info
+
+    def list_HTML_tags(self, text_dict):
+        tags = pd.DataFrame(columns=['ends', 'forms'])
+
+        for name, text in text_dict.items():
+            for tag in re.findall('<.*?>', text):
+                if tag[1] != '/':
+                    form = copy.deepcopy(tag)
+                    if tag.find(' ') > -1:
+                        tag = tag.split(' ')[0] + '>'
+                    if tag not in tags.index:
+                        row = pd.Series({'ends': False, 'forms': {form}}, name=tag)
+                        tags = tags.append(row)
+                    else:
+                        tags.loc[tag, 'forms'].add(form)
+                else:
+                    tag = '<' + tag[2:]
+                    if tag not in tags.index:
+                        print('starting tag not found:', tag)  # TODO LOGGING: error
+                    else:
+                        tags.loc[tag, 'ends'] = True
+
+        return tags
 
 
 class KeywordPreprocessing(Preprocessing, SubProcessLogger):
@@ -66,6 +92,7 @@ class KeywordPreprocessing(Preprocessing, SubProcessLogger):
         return processed_html
 
     def standardPreprocessing_HTML_tags(self, text_dict):
+        tags = self.list_HTML_tags(text_dict)
         return text_dict
 
     def indeedSamplesTemplateExtract(self, text_dict):
