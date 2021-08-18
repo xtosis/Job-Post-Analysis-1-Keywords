@@ -6,10 +6,12 @@ import os
 
 class KeywordPreprocessing(SubProcessLogger):
 
-    def preprocessing(self, path, data_format):
+    def preprocessing(self, path, template):
         raw = self.loadData(path)
-        if data_format == 'indeed_samples':
-            cleaned = self.indeedSamples(raw)
+
+        # templates
+        if template == 'indeed_samples':
+            processed = self.indeedSamplesTemplateExtract(raw)
 
     def loadData(self, path):
         raw = dict()
@@ -22,34 +24,31 @@ class KeywordPreprocessing(SubProcessLogger):
                     self.show_start_and_end('loaded', name, raw[name], 90)
         return raw
 
-    def indeedSamples(self, raw):
-        processed = dict()
+    def indeedSamplesTemplateExtract(self, text_dict):
+        processed_template = dict()
 
-        for name, cleaned_text in raw.items():
-
-            # putting '&' back
-            cleaned_text = cleaned_text.replace('&amp;', '&')
+        for name, text in text_dict.items():
 
             # sample files format: prefix and suffix
-            cleaned_text = self.remove_prefix(cleaned_text, "['")
-            cleaned_text = self.remove_suffix(cleaned_text, "']")
+            text = self.remove_prefix(text, "['")
+            text = self.remove_suffix(text, "']")
 
             # indeed posts format: prefix and suffix
-            cleaned_text = self.remove_prefix(cleaned_text, '<div id="jobDescriptionText" class="jobsearch-jobDescriptionText">')
-            cleaned_text = self.remove_suffix(cleaned_text, '</div>')
+            text = self.remove_prefix(text, '<div id="jobDescriptionText" class="jobsearch-jobDescriptionText">')
+            text = self.remove_suffix(text, '</div>')
 
             # indeed posts format: some posts are still enclosed in div containers
-            while cleaned_text.find('<div>') == 0:
-                if cleaned_text[-6:] == '</div>':
-                    cleaned_text = self.remove_prefix(cleaned_text, '<div>', ignore=True)
-                    cleaned_text = self.remove_suffix(cleaned_text, '</div>', ignore=True)
+            while text.find('<div>') == 0:
+                if text[-6:] == '</div>':
+                    text = self.remove_prefix(text, '<div>', ignore=True)
+                    text = self.remove_suffix(text, '</div>', ignore=True)
                 else:
                     break
 
-            self.show_start_and_end('cleaned', name, cleaned_text, 90)
-            processed[name] = cleaned_text
+            self.show_start_and_end('indeed-samples-template-extract', name, text, 90)
+            processed_template[name] = text
 
-        return processed
+        return processed_template
 
     def remove_prefix(self, text, prefix, ignore=False):
         if text[:len(prefix)] == prefix:
