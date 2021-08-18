@@ -55,6 +55,32 @@ class Preprocessing:
             text = text.replace(remove, char)
         return text
 
+    def replace_empty_HTML_tags(self, text_dict, tags):
+        tags_with_endings = copy.deepcopy(tags.query('ends == True'))
+        replaced_tags = dict()
+
+        for name, text in text_dict.items():
+
+            size_start = len(text)
+
+            for character in ('\n', ' '):
+                text = self.remove_doubled(text, character)
+            for tag, forms in tags_with_endings['forms'].items():
+                tag_end = tag.replace('<', '</')
+                for tag_start in forms:
+                    for character in ('\n', ' ', ''):
+                        remove = tag_start + character + tag_end
+                        text = text.replace(remove, '\n')
+                        text = self.remove_doubled(text, '\n')
+            text = text.replace('<br>', '\n')
+            text = self.remove_doubled(text, '\n')
+            replaced_tags[name] = text
+
+            size_end = len(text)
+            print('replaced html tags for', name, size_start, 'to', size_end)  # TODO LOGGING: debug
+
+        return replaced_tags
+
 
 class KeywordPreprocessing(Preprocessing, SubProcessLogger):
 
@@ -99,7 +125,8 @@ class KeywordPreprocessing(Preprocessing, SubProcessLogger):
 
     def standardPreprocessing_HTML_tags(self, text_dict):
         tags = self.list_HTML_tags(text_dict)
-        return text_dict
+        processed_html = self.replace_empty_HTML_tags(text_dict, tags)
+        return processed_html
 
     def indeedSamplesTemplateExtract(self, text_dict):
         processed_template = dict()
