@@ -4,7 +4,27 @@ from common.paths import PATH_DATA
 import os
 
 
-class KeywordPreprocessing(SubProcessLogger):
+class Preprocessing:
+
+    def remove_prefix(self, text, prefix, ignore=False):
+        if text[:len(prefix)] == prefix:
+            text = text[len(prefix):]
+        elif ignore is False:
+            print(f'prefix mismatch: {prefix} != {text[:len(prefix)]}')  # TODO LOGGING: warning
+        return text
+
+    def remove_suffix(self, text, suffix, ignore=False):
+        if text[-len(suffix):] == suffix:
+            text = text[:-len(suffix)]
+        elif ignore is False:
+            print(f'suffix mismatch: {suffix} != {text[-len(suffix):]}')  # TODO LOGGING: warning
+        return text
+
+    def show_start_and_end(self, stage, file_name, text, lim):
+        print(stage, file_name, text[:lim], '...', text[-lim:])  # TODO LOGGING: debug or info
+
+
+class KeywordPreprocessing(Preprocessing, SubProcessLogger):
 
     def preprocessing(self, path, template):
         raw = self.loadData(path)
@@ -49,20 +69,3 @@ class KeywordPreprocessing(SubProcessLogger):
             processed_template[name] = text
 
         return processed_template
-
-    def remove_prefix(self, text, prefix, ignore=False):
-        if text[:len(prefix)] == prefix:
-            text = text[len(prefix):]
-        elif ignore is False:
-            print(f'prefix mismatch: {prefix} != {text[:len(prefix)]}')  # TODO LOGGING: warning
-        return text
-
-    def remove_suffix(self, text, suffix, ignore=False):
-        if text[-len(suffix):] == suffix:
-            text = text[:-len(suffix)]
-        elif ignore is False:
-            print(f'suffix mismatch: {suffix} != {text[-len(suffix):]}')  # TODO LOGGING: warning
-        return text
-
-    def show_start_and_end(self, stage, file_name, text, lim):
-        print(stage, file_name, text[:lim], '...', text[-lim:])  # TODO LOGGING: debug or info
