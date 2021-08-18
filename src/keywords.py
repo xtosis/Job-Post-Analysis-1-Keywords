@@ -14,9 +14,9 @@ REPLACE = {
 
 
 class Process(ProcessLogger, KeywordSettings, KeywordPreprocessing):
-    def __init__(self, job_post_path, keywords_path, data_format):
+    def __init__(self, job_post_path, keywords_path, template):
         self.loadKeywords(keywords_path)
-        self.preprocessing(job_post_path, data_format)  # from KeywordPreprocessing
+        self.preprocessing(job_post_path, template)  # from KeywordPreprocessing
         self.process()
         self.finish()
 

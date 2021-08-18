@@ -6,6 +6,6 @@ PANDAS_DISPLAY_SETTINGS()
 
 PATH_JOB_POSTS = PATH_DATA + '/indeed/samples'
 PATH_KEYWORDS = PATH_DATA + '/keywords_data_science.xlsx'
-DATA_FORMAT = 'indeed_samples'
+TEMPLATE = 'indeed_samples'
 
-test = Process(PATH_JOB_POSTS, PATH_KEYWORDS, DATA_FORMAT)
+test = Process(PATH_JOB_POSTS, PATH_KEYWORDS, TEMPLATE)
