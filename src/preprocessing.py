@@ -5,6 +5,7 @@ import os
 import pandas as pd
 import re
 import copy
+import hashlib
 
 
 class Preprocessing:
@@ -151,7 +152,7 @@ class KeywordPreprocessing(Preprocessing, SubProcessLogger):
 
         replace_dict = {'&amp;': '&',  # putting '&' back
                         '\\n': '\n',  # replacing weird newline artifact: \\n
-                        "\'": "'"}  # replacing \'
+                        "\\'": "'"}  # replacing \'
 
         for name, text in text_dict.items():
             for old, new in replace_dict.items():
