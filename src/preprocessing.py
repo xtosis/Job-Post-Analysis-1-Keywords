@@ -135,6 +135,7 @@ class KeywordPreprocessing(Preprocessing, SubProcessLogger):
             processed = self.standardPreprocessing_HTML_tags(processed)
 
         processed = self.final_clean_up(processed)
+        processed = self.splitSentences(processed)
 
     def loadData(self, path):
         raw = dict()
@@ -166,6 +167,33 @@ class KeywordPreprocessing(Preprocessing, SubProcessLogger):
         processed_html = self.replace_empty_HTML_tags(text_dict, tags)
         processed_html = self.remove_HTML_tags(processed_html, tags)
         return processed_html
+
+    def splitSentences(self, text_dict):
+        splitted = pd.DataFrame(columns=['file', 'id_s', 'words', 'commas', 'md5', 'sentence'])
+        files_md5 = pd.DataFrame(columns=['file', 'md5'])
+
+        for name, text in text_dict.items():
+            sentences = text.splitlines()
+            file_md5 = ''
+            for i, sentence in enumerate(sentences):
+                words = sentence.count(' ') + 1
+                commas = sentence.count(',')
+                sentence_md5 = hashlib.md5(sentence.encode()).hexdigest()
+                file_md5 = file_md5 + sentence_md5
+                splitted = splitted.append({
+                    'file': name,
+                    'id_s': i,
+                    'words': words,
+                    'commas': commas,
+                    'md5': sentence_md5,
+                    'sentence': sentence
+                }, ignore_index=True)
+            file_md5 = hashlib.md5(file_md5.encode()).hexdigest()
+            files_md5 = files_md5.append({'file': name, 'md5': file_md5}, ignore_index=True)
+
+        print(splitted.tail(10))  # TODO LOGGING: debug
+
+        return splitted
 
     def indeedSamplesTemplateExtract(self, text_dict):
         processed_template = dict()
