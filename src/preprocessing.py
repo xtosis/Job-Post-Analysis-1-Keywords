@@ -135,7 +135,11 @@ class KeywordPreprocessing(Preprocessing, SubProcessLogger):
             processed = self.standardPreprocessing_HTML_tags(processed)
 
         processed = self.final_clean_up(processed)
-        processed = self.splitSentences(processed)
+        processed = self.splitSentencesThenAnalyze(processed)
+
+        map_text_hashes = processed['map_text_hashes']
+        map_sentences = processed['map_sentences']
+        sentences = processed['sentences']
 
     def loadData(self, path):
         raw = dict()
@@ -168,32 +172,95 @@ class KeywordPreprocessing(Preprocessing, SubProcessLogger):
         processed_html = self.HTML_tags_remove(processed_html, tags)
         return processed_html
 
-    def splitSentences(self, text_dict):
-        splitted = pd.DataFrame(columns=['file', 'id_s', 'words', 'commas', 'md5', 'sentence'])
-        files_md5 = pd.DataFrame(columns=['file', 'md5'])
+    def splitSentencesThenAnalyze(self, text_dict):
+        # unique post to sentence connections
+        unq_p2sc = pd.DataFrame(columns=['file', 'id_s', 'sentence_hash'])  # index: arbitrary
+
+        # sentences
+        unq_sentences = pd.DataFrame(columns=['words', 'commas', 'sentence'])  # index: sentence_hash
+        dup_sentences = pd.DataFrame(columns=['count', 'sentence'])  # index: sentence_hash
+
+        # text hashes for files
+        unq_text_hash = dict()  # index: text_hash
+
+        # duplicate files
+        dup_text_hash = dict()  # index: file name
 
         for name, text in text_dict.items():
             sentences = text.splitlines()
-            file_md5 = ''
+            text_hash = ''
+
+            # current post to sentence connections (text split into lines)
+            cur_p2sc = pd.DataFrame(columns=['file', 'id_s', 'sentence_hash'])
+
             for i, sentence in enumerate(sentences):
+
+                # --- computing sentence data: words, commas, sentence hash & incrementing text_hash
                 words = sentence.count(' ') + 1
                 commas = sentence.count(',')
-                sentence_md5 = hashlib.md5(sentence.encode()).hexdigest()
-                file_md5 = file_md5 + sentence_md5
-                splitted = splitted.append({
+                sentence_hash = hashlib.md5(sentence.encode()).hexdigest()
+                text_hash = text_hash + sentence_hash
+
+                # --- checking sentence hashes for duplicates
+
+                # sentence is unique: update unq_sentences
+                if sentence_hash not in unq_sentences.index.values:
+                    row = pd.Series({'words': words, 'commas': commas}, name=sentence_hash)
+                    unq_sentences = unq_sentences.append(row)
+
+                # sentence is a duplicate: update unq_sentences
+                else:
+
+                    # first occurance: add row
+                    if sentence_hash not in dup_sentences.index.values:
+                        row = pd.Series({'count': 0, 'sentence': sentence}, name=sentence_hash)
+                        dup_sentences = dup_sentences.append(row)
+
+                    # subsequent occurances: increment duplicate count
+                    else:
+                        val = dup_sentences.loc[sentence_hash, 'count'] + 1
+                        dup_sentences.loc[sentence_hash, 'count'] = val
+
+                # --- constructing current p2sc
+                cur_p2sc = cur_p2sc.append({
                     'file': name,
                     'id_s': i,
-                    'words': words,
-                    'commas': commas,
-                    'md5': sentence_md5,
-                    'sentence': sentence
+                    'sentence_hash': sentence_hash
                 }, ignore_index=True)
-            file_md5 = hashlib.md5(file_md5.encode()).hexdigest()
-            files_md5 = files_md5.append({'file': name, 'md5': file_md5}, ignore_index=True)
 
-        print(splitted.tail(10))  # TODO LOGGING: debug
+            # --- checking post text_hash for duplicates
+            text_hash = hashlib.md5(text_hash.encode()).hexdigest()
 
-        return splitted
+            # text_hash is unique (unique text in post): update unq_text_hash & unq_p2sc
+            if text_hash not in unq_text_hash.keys():
+                unq_text_hash[text_hash] = name
+                unq_p2sc = unq_p2sc.append(cur_p2sc, ignore_index=True)
+
+            # text_hash is a duplicate: update dup_text_hash
+            else:
+                org = unq_text_hash[text_hash]
+
+                # first occurance: add original file name to keys
+                if org not in dup_text_hash.keys():
+                    dup_text_hash[org] = []
+
+                # append duplicate filename
+                dup_text_hash[org].append(name)
+
+        # TODO LOGGING start: info
+        dup_sentences.sort_values(['count'], inplace=True)
+        print('-' * 79)
+        print('dup_sentences')
+        print(dup_sentences)
+        print('-' * 79)
+        print(pd.Series(dup_text_hash, name='dup_text_hashes: org vs dups'))
+        # TODO LOGGING end: info
+
+        res = {'map_text_hashes': unq_text_hash,
+               'map_sentences': unq_p2sc,
+               'sentences': unq_sentences}
+
+        return res
 
     def indeedSamplesTemplateExtract(self, text_dict):
         processed_template = dict()
