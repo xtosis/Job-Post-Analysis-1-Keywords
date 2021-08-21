@@ -27,7 +27,7 @@ class Preprocessing:
     def show_start_and_end(self, stage, file_name, text, lim):
         print(stage, file_name, text[:lim], '...', text[-lim:])  # TODO LOGGING: debug or info
 
-    def list_HTML_tags(self, text_dict):
+    def HTML_tags_get_list(self, text_dict):
         tags = pd.DataFrame(columns=['ends', 'forms'])
 
         for name, text in text_dict.items():
@@ -163,7 +163,7 @@ class KeywordPreprocessing(Preprocessing, SubProcessLogger):
         return processed_html
 
     def standardPreprocessing_HTML_tags(self, text_dict):
-        tags = self.list_HTML_tags(text_dict)
+        tags = self.HTML_tags_get_list(text_dict)
         processed_html = self.HTML_tags_replace_empty(text_dict, tags)
         processed_html = self.HTML_tags_remove(processed_html, tags)
         return processed_html
