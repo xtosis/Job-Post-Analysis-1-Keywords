@@ -82,7 +82,7 @@ class Preprocessing:
 
         return replaced_tags
 
-    def remove_HTML_tags(self, text_dict, tags):
+    def HTML_tags_remove(self, text_dict, tags):
         removed_tags = dict()
 
         for name, text in text_dict.items():
@@ -165,7 +165,7 @@ class KeywordPreprocessing(Preprocessing, SubProcessLogger):
     def standardPreprocessing_HTML_tags(self, text_dict):
         tags = self.list_HTML_tags(text_dict)
         processed_html = self.HTML_tags_replace_empty(text_dict, tags)
-        processed_html = self.remove_HTML_tags(processed_html, tags)
+        processed_html = self.HTML_tags_remove(processed_html, tags)
         return processed_html
 
     def splitSentences(self, text_dict):
