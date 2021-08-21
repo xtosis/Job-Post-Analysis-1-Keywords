@@ -56,7 +56,7 @@ class Preprocessing:
             text = text.replace(remove, char)
         return text
 
-    def replace_empty_HTML_tags(self, text_dict, tags):
+    def HTML_tags_replace_empty(self, text_dict, tags):
         tags_with_endings = copy.deepcopy(tags.query('ends == True'))
         replaced_tags = dict()
 
@@ -164,7 +164,7 @@ class KeywordPreprocessing(Preprocessing, SubProcessLogger):
 
     def standardPreprocessing_HTML_tags(self, text_dict):
         tags = self.list_HTML_tags(text_dict)
-        processed_html = self.replace_empty_HTML_tags(text_dict, tags)
+        processed_html = self.HTML_tags_replace_empty(text_dict, tags)
         processed_html = self.remove_HTML_tags(processed_html, tags)
         return processed_html
 
