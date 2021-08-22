@@ -138,10 +138,12 @@ class KeywordPreprocessing(Preprocessing, SubProcessLogger):
         processed = self.splitSentencesThenAnalyze(processed)
 
         sentences = processed['sentences']
-        # type   | dict()
-        # -------+------------------------------------------------------------
-        # keys   | md5 hash of hash of every unique sentence without lowering
-        # values | file name
+        # type    | pandas.DataFrame
+        # --------+-----------------------------------------------------------
+        # index   | md5 hash of the sentence without lowering
+        # columns | words: # of words in the sentence
+        #         | commas: # of commas in the sentence
+        #         | sentence: sentence text without lowering
 
         map_text_hashes = processed['map_text_hashes']
         # type   | dict()
