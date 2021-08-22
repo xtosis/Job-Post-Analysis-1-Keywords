@@ -221,11 +221,18 @@ class KeywordPreprocessing(Preprocessing, SubProcessLogger):
 
                 # sentence is unique: update unq_sentences
                 if sentence_hash not in unq_sentences.index.values:
+
+                    # TODO LOGGING: debug
+                    print('splitSentencesThenAnalyze {:} line {:02g} UNQ-SENTENCE: {:}'.format(name, i, sentence))
+
                     row = pd.Series({'words': words, 'commas': commas}, name=sentence_hash)
                     unq_sentences = unq_sentences.append(row)
 
                 # sentence is a duplicate: update unq_sentences
                 else:
+
+                    # TODO LOGGING: debug
+                    print('splitSentencesThenAnalyze {:} line {:02g} DUP-SENTENCE: {:}'.format(name, i, sentence[:]))
 
                     # first occurance: add row
                     if sentence_hash not in dup_sentences.index.values:
@@ -249,12 +256,19 @@ class KeywordPreprocessing(Preprocessing, SubProcessLogger):
 
             # text_hash is unique (unique text in post): update unq_text_hash & unq_p2sc
             if text_hash not in unq_text_hash.keys():
+
+                # TODO LOGGING: debug
+                print('splitSentencesThenAnalyze {:} UNQ-FILE-HASH'.format(name))
+
                 unq_text_hash[text_hash] = name
                 unq_p2sc = unq_p2sc.append(cur_p2sc, ignore_index=True)
 
             # text_hash is a duplicate: update dup_text_hash
             else:
                 org = unq_text_hash[text_hash]
+
+                # TODO LOGGING: debug
+                print('splitSentencesThenAnalyze {:} DUP-FILE-HASH parent: {:}'.format(name, org))
 
                 # first occurance: add original file name to keys
                 if org not in dup_text_hash.keys():
