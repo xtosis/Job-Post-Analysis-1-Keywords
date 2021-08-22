@@ -273,9 +273,9 @@ class KeywordPreprocessing(Preprocessing, SubProcessLogger):
         print(pd.Series(dup_text_hash, name='dup_text_hashes: org vs dups'))
         # TODO LOGGING end: info
 
-        res = {'map_text_hashes': unq_text_hash,
-               'map_sentences': unq_p2sc,
-               'sentences': unq_sentences}
+        res = {'sentences': unq_sentences,
+               'map_text_hashes': unq_text_hash,
+               'map_sentences': unq_p2sc}
 
         return res
 
