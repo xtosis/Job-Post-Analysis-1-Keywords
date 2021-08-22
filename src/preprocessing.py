@@ -137,6 +137,12 @@ class KeywordPreprocessing(Preprocessing, SubProcessLogger):
         processed = self.final_clean_up(processed)
         processed = self.splitSentencesThenAnalyze(processed)
 
+        sentences = processed['sentences']
+        # type   | dict()
+        # -------+------------------------------------------------------------
+        # keys   | md5 hash of hash of every unique sentence without lowering
+        # values | file name
+
         map_text_hashes = processed['map_text_hashes']
         # type   | dict()
         # -------+------------------------------------------------------------
@@ -150,12 +156,6 @@ class KeywordPreprocessing(Preprocessing, SubProcessLogger):
         # columns | files: file names
         #         | id_s: line # of the sentence in the cleaned text of the post
         #         | sentence_hash: md5 hash of the sentence without lowering
-
-        sentences = processed['sentences']
-        # type   | dict()
-        # -------+------------------------------------------------------------
-        # keys   | md5 hash of hash of every unique sentence without lowering
-        # values | file name
 
     def loadData(self, path):
         raw = dict()
