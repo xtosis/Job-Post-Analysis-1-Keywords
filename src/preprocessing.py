@@ -236,7 +236,7 @@ class KeywordPreprocessing(Preprocessing, SubProcessLogger):
 
                     # first occurance: add row
                     if sentence_hash not in dup_sentences.index.values:
-                        row = pd.Series({'count': 0, 'sentence': sentence}, name=sentence_hash)
+                        row = pd.Series({'count': 1, 'sentence': sentence}, name=sentence_hash)
                         dup_sentences = dup_sentences.append(row)
 
                     # subsequent occurances: increment duplicate count
