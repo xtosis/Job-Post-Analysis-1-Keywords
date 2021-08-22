@@ -138,8 +138,24 @@ class KeywordPreprocessing(Preprocessing, SubProcessLogger):
         processed = self.splitSentencesThenAnalyze(processed)
 
         map_text_hashes = processed['map_text_hashes']
+        # type   | dict()
+        # -------+------------------------------------------------------------
+        # keys   | md5 hash of the full text of every unique post without lowering
+        # values | file names
+
         map_sentences = processed['map_sentences']
+        # type    | pandas.DataFrame
+        # --------+-----------------------------------------------------------
+        # index   | arbitrary
+        # columns | files: file names
+        #         | id_s: line # of the sentence in the cleaned text of the post
+        #         | sentence_hash: md5 hash of the sentence without lowering
+
         sentences = processed['sentences']
+        # type   | dict()
+        # -------+------------------------------------------------------------
+        # keys   | md5 hash of hash of every unique sentence without lowering
+        # values | file name
 
     def loadData(self, path):
         raw = dict()
@@ -253,6 +269,7 @@ class KeywordPreprocessing(Preprocessing, SubProcessLogger):
         print('dup_sentences')
         print(dup_sentences)
         print('-' * 79)
+        print('dup_text_hashes')
         print(pd.Series(dup_text_hash, name='dup_text_hashes: org vs dups'))
         # TODO LOGGING end: info
 
