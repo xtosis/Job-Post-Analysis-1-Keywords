@@ -137,7 +137,7 @@ class KeywordPreprocessing(Preprocessing, SubProcessLogger):
         processed = self.final_clean_up(processed)
         processed = self.splitSentencesThenAnalyze(processed)
 
-        sentences = processed['sentences']
+        data_sentences = processed['data_sentences']
         # type    | pandas.DataFrame
         # --------+-----------------------------------------------------------
         # index   | md5 hash of the sentence without lowering
@@ -289,7 +289,7 @@ class KeywordPreprocessing(Preprocessing, SubProcessLogger):
         print(pd.Series(dup_text_hash, name='dup_text_hashes: org vs dups'))
         # TODO LOGGING end: info
 
-        res = {'sentences': unq_sentences,
+        res = {'data_sentences': unq_sentences,
                'map_text_hashes': map_text_hashes,
                'map_sentence_lines': map_sentence_lines}
 
