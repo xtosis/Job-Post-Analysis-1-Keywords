@@ -199,7 +199,7 @@ class KeywordPreprocessing(Preprocessing, SubProcessLogger):
         dup_sentences = pd.DataFrame(columns=['count', 'sentence'])  # index: sentence_hash
 
         # text hashes for files
-        unq_text_hash = dict()  # index: text_hash
+        map_text_hashes = dict()  # index: text_hash
 
         # duplicate files
         dup_text_hash = dict()  # index: file name
@@ -256,18 +256,18 @@ class KeywordPreprocessing(Preprocessing, SubProcessLogger):
             # --- checking post text_hash for duplicates
             text_hash = hashlib.md5(text_hash.encode()).hexdigest()
 
-            # text_hash is unique (unique text in post): update unq_text_hash & unq_p2sc
-            if text_hash not in unq_text_hash.keys():
+            # text_hash is unique (unique text in post): update map_text_hashes & unq_p2sc
+            if text_hash not in map_text_hashes.keys():
 
                 # TODO LOGGING: debug
                 print('splitSentencesThenAnalyze {:} UNQ-FILE-HASH'.format(name))
 
-                unq_text_hash[text_hash] = name
+                map_text_hashes[text_hash] = name
                 unq_p2sc = unq_p2sc.append(cur_p2sc, ignore_index=True)
 
             # text_hash is a duplicate: update dup_text_hash
             else:
-                org = unq_text_hash[text_hash]
+                org = map_text_hashes[text_hash]
 
                 # TODO LOGGING: debug
                 print('splitSentencesThenAnalyze {:} DUP-FILE-HASH parent: {:}'.format(name, org))
@@ -290,7 +290,7 @@ class KeywordPreprocessing(Preprocessing, SubProcessLogger):
         # TODO LOGGING end: info
 
         res = {'sentences': unq_sentences,
-               'map_text_hashes': unq_text_hash,
+               'map_text_hashes': map_text_hashes,
                'map_sentences': unq_p2sc}
 
         return res
