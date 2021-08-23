@@ -192,7 +192,7 @@ class KeywordPreprocessing(Preprocessing, SubProcessLogger):
 
     def splitSentencesThenAnalyze(self, text_dict):
         # unique post to sentence connections
-        unq_p2sc = pd.DataFrame(columns=['file', 'id_s', 'sentence_hash'])  # index: arbitrary
+        map_sentence_lines = pd.DataFrame(columns=['file', 'id_s', 'sentence_hash'])  # index: arbitrary
 
         # sentences
         unq_sentences = pd.DataFrame(columns=['words', 'commas', 'sentence'])  # index: sentence_hash
@@ -256,14 +256,14 @@ class KeywordPreprocessing(Preprocessing, SubProcessLogger):
             # --- checking post text_hash for duplicates
             text_hash = hashlib.md5(text_hash.encode()).hexdigest()
 
-            # text_hash is unique (unique text in post): update map_text_hashes & unq_p2sc
+            # text_hash is unique (unique text in post): update map_text_hashes & map_sentence_lines
             if text_hash not in map_text_hashes.keys():
 
                 # TODO LOGGING: debug
                 print('splitSentencesThenAnalyze {:} UNQ-FILE-HASH'.format(name))
 
                 map_text_hashes[text_hash] = name
-                unq_p2sc = unq_p2sc.append(cur_p2sc, ignore_index=True)
+                map_sentence_lines = map_sentence_lines.append(cur_p2sc, ignore_index=True)
 
             # text_hash is a duplicate: update dup_text_hash
             else:
@@ -291,7 +291,7 @@ class KeywordPreprocessing(Preprocessing, SubProcessLogger):
 
         res = {'sentences': unq_sentences,
                'map_text_hashes': map_text_hashes,
-               'map_sentences': unq_p2sc}
+               'map_sentences': map_sentence_lines}
 
         return res
 
