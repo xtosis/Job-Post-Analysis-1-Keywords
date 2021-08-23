@@ -168,6 +168,12 @@ class KeywordPreprocessing(Preprocessing, SubProcessLogger):
                     name = file_path.replace(PATH_DATA, '')
                     raw[name] = f.read()
                     self.show_start_and_end('loaded', name, raw[name], 90)
+
+        # -- sorting file names
+        raw = pd.Series(raw, name='raw')
+        raw.sort_index(inplace=True)
+        raw = raw.to_dict()
+
         return raw
 
     def standardPreprocessing_HTML_replacements(self, text_dict):
