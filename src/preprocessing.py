@@ -151,7 +151,7 @@ class KeywordPreprocessing(Preprocessing, SubProcessLogger):
         # keys   | md5 hash of the full text of every unique post without lowering
         # values | file names
 
-        map_sentences = processed['map_sentences']
+        map_sentence_lines = processed['map_sentence_lines']
         # type    | pandas.DataFrame
         # --------+-----------------------------------------------------------
         # index   | arbitrary
@@ -291,7 +291,7 @@ class KeywordPreprocessing(Preprocessing, SubProcessLogger):
 
         res = {'sentences': unq_sentences,
                'map_text_hashes': map_text_hashes,
-               'map_sentences': map_sentence_lines}
+               'map_sentence_lines': map_sentence_lines}
 
         return res
 
