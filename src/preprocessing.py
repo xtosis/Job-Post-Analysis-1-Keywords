@@ -233,7 +233,7 @@ class KeywordPreprocessing(Preprocessing, SubProcessLogger):
                     # TODO LOGGING: debug
                     print('splitSentencesThenAnalyze {:} line {:02g} UNQ-SENTENCE: {:}'.format(name, i, sentence))
 
-                    row = pd.Series({'words': words, 'commas': commas}, name=sentence_hash)
+                    row = pd.Series({'words': words, 'commas': commas, 'sentence': sentence}, name=sentence_hash)
                     unq_sentences = unq_sentences.append(row)
 
                 # sentence is a duplicate: update unq_sentences
