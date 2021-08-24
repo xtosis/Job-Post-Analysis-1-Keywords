@@ -136,6 +136,7 @@ class KeywordPreprocessing(Preprocessing, SubProcessLogger):
 
         processed = self.final_clean_up(processed)
         processed = self.splitSentencesThenAnalyze(processed)
+        processed = self.lowerSentencesThenAnalyze(processed)
 
         data_sentences = processed['data_sentences']
         # type    | pandas.DataFrame
@@ -144,6 +145,14 @@ class KeywordPreprocessing(Preprocessing, SubProcessLogger):
         # columns | words: # of words in the sentence
         #         | commas: # of commas in the sentence
         #         | sentence: sentence text without lowering
+
+        data_sentences_lowered = processed['data_sentences']
+        # type    | pandas.DataFrame
+        # --------+-----------------------------------------------------------
+        # index   | md5 hash of the sentence without lowering
+        # columns | lowered_hash: md5 hash of the sentence with lowering
+        #         | role: None, 'paret' or 'child' (children have same lowered hash of parent)
+        #         | sentence_lowered: the lowered sentence
 
         map_text_hashes = processed['map_text_hashes']
         # type   | dict()
@@ -300,6 +309,73 @@ class KeywordPreprocessing(Preprocessing, SubProcessLogger):
                'map_sentence_lines': map_sentence_lines}
 
         return res
+
+    def lowerSentencesThenAnalyze(self, previous_res):
+
+        # will contain unique lowered sentences and their subsequent lowered hashes
+        data_sentences_lowered = pd.DataFrame(columns=['lowered_hash', 'role', 'sentence_lowered'])  # index: unlowered sentence hash
+
+        # will contain sentences with duplicate lowered hashes
+        dup_lowered_hash = pd.DataFrame(columns=['lowered_hash', 'role', 'sentence'])  # index: unlowered sentence hash
+
+        for sentence_hash, sentence in previous_res['data_sentences']['sentence'].items():
+            sentence_lowered = sentence.lower()
+            lowered_hash = hashlib.md5(sentence_lowered.encode()).hexdigest()
+
+            # initializing role
+            role = None  # None, 'parent' or 'child'
+
+            # filtering for duplicate lowered hashes
+            fil = copy.deepcopy(data_sentences_lowered.query(f'lowered_hash == "{lowered_hash}"'))
+
+            # unique lowered_hash
+            if len(fil) == 0:
+
+                # TODO LOGGING: debug
+                print('lowerSentencesThenAnalyze', lowered_hash)
+
+            # has a lowered hash duplicate
+            else:
+
+                # TODO LOGGING: debug
+                print('lowerSentencesThenAnalyze', lowered_hash, 'child')
+
+                # registering the child
+                role = 'child'
+                row = pd.Series({'lowered_hash': lowered_hash, 'role': role, 'sentence': sentence},
+                                name=sentence_hash)
+                dup_lowered_hash = dup_lowered_hash.append(row)
+
+                # getting unlowered sentence hash of the first occurance...
+                # which will be treated as 'parent' of subsequent duplicates
+                original = fil.index.values[0]
+
+                # registering parent if not already registered
+                if fil.loc[original, 'role'] != 'parent':
+
+                    # TODO LOGGING: debug
+                    print('lowerSentencesThenAnalyze', lowered_hash, 'parent')
+
+                    data_sentences_lowered.loc[original, 'role'] = 'parent'
+                    row = pd.Series({'lowered_hash': lowered_hash, 'role': 'parent',
+                                     'sentence': previous_res['data_sentences'].loc[original, 'sentence']},
+                                    name=original)
+                    dup_lowered_hash = dup_lowered_hash.append(row)
+
+            row = pd.Series({'lowered_hash': lowered_hash, 'role': role, 'sentence_lowered': sentence_lowered},
+                            name=sentence_hash)
+            data_sentences_lowered = data_sentences_lowered.append(row)
+
+        # TODO LOGGING: info
+        dup_lowered_hash.sort_values(['lowered_hash', 'role'], ascending=[False, False], inplace=True)
+        print('-' * 79)
+        print('dup_lowered_hash')
+        print(dup_lowered_hash)
+        # TODO LOGGING: info
+
+        previous_res['data_sentences_lowered'] = data_sentences_lowered
+
+        return previous_res
 
     def indeedSamplesTemplateExtract(self, text_dict):
         processed_template = dict()
