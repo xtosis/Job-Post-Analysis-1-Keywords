@@ -146,7 +146,7 @@ class KeywordPreprocessing(Preprocessing, SubProcessLogger):
         #         | commas: # of commas in the sentence
         #         | sentence: sentence text without lowering
 
-        data_sentences_lowered = processed['data_sentences']
+        data_sentences_lowered = processed['data_sentences_lowered']
         # type    | pandas.DataFrame
         # --------+-----------------------------------------------------------
         # index   | md5 hash of the sentence without lowering
