@@ -120,7 +120,7 @@ class Preprocessing:
 
 class KeywordPreprocessing(Preprocessing, SubProcessLogger):
 
-    def preprocessing(self, path, template):
+    def preprocessing(self, path, template, to_strip=' /\\!.:#?-();,*+|$[]', strip_after='lowerring', auto_strip=True):
         raw = self.loadData(path)
         process_HTML = False
 
@@ -137,6 +137,7 @@ class KeywordPreprocessing(Preprocessing, SubProcessLogger):
         processed = self.final_clean_up(processed)
         processed = self.splitSentencesThenAnalyze(processed)
         processed = self.lowerSentencesThenAnalyze(processed)
+        processed = self.stripSentencesThenAnalyze(processed, to_strip, strip_after, auto_strip)
 
         data_sentences = processed['data_sentences']
         # type    | pandas.DataFrame
@@ -153,6 +154,16 @@ class KeywordPreprocessing(Preprocessing, SubProcessLogger):
         # columns | lowered_hash: md5 hash of the sentence with lowering
         #         | role: None, 'paret' or 'child' (children have same lowered hash of parent)
         #         | sentence_lowered: the lowered sentence
+
+        data_sentences_lowered = processed['data_sentences_stripped']
+        # type    | pandas.DataFrame
+        # --------+-----------------------------------------------------------
+        # index   | md5 hash of the sentence without lowering or stripping
+        # columns | stripped_hash: md5 hash of the sentence with stripping
+        #         | role: None, 'paret' or 'child' (children have same lowered hash of parent)
+        #         | flag_start: None or non-alphanumeric character at the start of the sentence before stripping
+        #         | flag_end: None or non-alphanumeric character at the end of the sentence before stripping
+        #         | sentence_stripped: the stripped sentence
 
         map_text_hashes = processed['map_text_hashes']
         # type   | dict()
@@ -374,6 +385,178 @@ class KeywordPreprocessing(Preprocessing, SubProcessLogger):
         # TODO LOGGING: info
 
         previous_res['data_sentences_lowered'] = data_sentences_lowered
+
+        return previous_res
+
+    def stripSentencesThenAnalyze(self, previous_res, to_strip, strip_after, auto_strip):
+
+        # --- making sure inputs to the function are valid -------------------
+
+        # early exit
+        if to_strip is None or strip_after is None:
+
+            # TODO LOGGING: info
+            print('stripSentencesThenAnalyze EARLY EXIT')
+
+            return previous_res
+
+        # deciding what version of the sentences to process
+        if strip_after == 'lowerring':
+            previous_data = previous_res['data_sentences_lowered']
+            previous_data = previous_data[previous_data['role'] != 'child']  # dropping children (duplicates)
+            previous_data = previous_data['sentence_lowered']
+
+        elif strip_after == 'splitting':
+            previous_data = previous_res['data_sentences']['sentence']
+        else:
+
+            # TODO LOGGING: error
+            raise ValueError('param <strip_after> is not recognized')
+
+        # --- initializing ---------------------------------------------------
+
+        # will contain unique stripped sentences and their subsequent stripped hashes
+        data_sentences_stripped = pd.DataFrame(columns=['stripped_hash', 'role', 'flag_start', 'flag_end', 'sentence_stripped'])  # index: unstripped sentence hash
+
+        # will contain sentences with duplicate stripped hashes
+        dup_stripped_hash = pd.DataFrame(columns=['stripped_hash', 'role', 'sentence'])  # index: unstripped sentence hash
+
+        # TODO LOGGING: this should be done in project logging modules
+        # errors and warnings
+        messages = pd.DataFrame(columns=['sentence_hash', 'type', 'message', 'data'])  # index: arbitrary
+
+        # --- processing -----------------------------------------------------
+
+        for sentence_hash, sentence in previous_res['data_sentences_lowered']['sentence_lowered'].items():
+
+            # --- flagging ---------------------------------------------------
+
+            # initializing flags
+            flag_start = None
+            flag_end = None
+
+            # length check: 0 length
+            if len(sentence) > 0:
+
+                # flagging start
+                if not sentence[0].isalnum():
+                    flag_start = sentence[0]
+
+                if len(sentence) > 1:
+
+                    # flagging end
+                    if not sentence[-1].isalnum():
+                        flag_end = sentence[-1]
+
+                else:
+
+                    # TODO LOGGING: warning
+                    messages = messages.append({'sentence_hash': sentence_hash,
+                                                'type': 'warning',
+                                                'message': 'sentence is too short: before stripping',
+                                                'data': f'|{sentence}|'},
+                                               ignore_index=True)
+
+            else:
+
+                # TODO LOGGING: warning
+                messages = messages.append({'sentence_hash': sentence_hash,
+                                            'type': 'warning',
+                                            'message': 'zero length sentence'},
+                                           ignore_index=True)
+
+            # catching unrecognized non-alphanumeric characters
+            for flag in (flag_start, flag_end):
+                if flag is not None:
+                    if flag not in to_strip:
+
+                        # TODO LOGGING: warning
+                        messages = messages.append({'sentence_hash': sentence_hash,
+                                                    'type': 'warning',
+                                                    'message': 'new alphanumeric character',
+                                                    'data': flag},
+                                                   ignore_index=True)
+
+                        if auto_strip:
+                            to_strip = to_strip + flag
+
+                            # TODO LOGGING: warning
+                            print(f'stripSentencesThenAnalyze {sentence_hash} FLAG |{flag}| will be automatically stripped')
+
+            # ----------------------------------------------------------------
+
+            sentence_stripped = sentence.strip(to_strip)
+            stripped_hash = hashlib.md5(sentence_stripped.encode()).hexdigest()
+
+            # checking sentence length after stripping
+            if len(sentence_stripped) < 3:
+
+                # TODO LOGGING: warning
+                messages = messages.append({'sentence_hash': sentence_hash,
+                                            'type': 'warning',
+                                            'message': 'sentence is too short: after stripping',
+                                            'data': f'|{sentence_stripped}|'},
+                                           ignore_index=True)
+
+            # initializing role
+            role = None  # None, 'parent' or 'child'
+
+            # filtering for duplicate stripped hashes
+            fil = copy.deepcopy(data_sentences_stripped.query(f'stripped_hash == "{stripped_hash}"'))
+
+            # unique stripped_hash
+            if len(fil) == 0:
+
+                # TODO LOGGING: debug
+                print('stripSentencesThenAnalyze', stripped_hash)
+
+            # has a stripped hash duplicate
+            else:
+
+                # TODO LOGGING: debug
+                print('stripSentencesThenAnalyze', stripped_hash, 'child')
+
+                # registering the child
+                role = 'child'
+                row = pd.Series({'stripped_hash': stripped_hash, 'role': role, 'sentence': sentence},
+                                name=sentence_hash)
+                dup_stripped_hash = dup_stripped_hash.append(row)
+
+                # getting unstripped sentence hash of the first occurance...
+                # which will be treated as 'parent' of subsequent duplicates
+                original = fil.index.values[0]
+
+                # registering parent if not already registered
+                if fil.loc[original, 'role'] != 'parent':
+
+                    # TODO LOGGING: debug
+                    print('stripSentencesThenAnalyze', stripped_hash, 'parent')
+
+                    data_sentences_stripped.loc[original, 'role'] = 'parent'
+                    row = pd.Series({'stripped_hash': stripped_hash, 'role': 'parent',
+                                     'sentence': previous_res['data_sentences'].loc[original, 'sentence']},
+                                    name=original)
+                    dup_stripped_hash = dup_stripped_hash.append(row)
+
+            row = pd.Series({'stripped_hash': stripped_hash,
+                             'role': role,
+                             'flag_start': flag_start,
+                             'flag_end': flag_end,
+                             'sentence_stripped': sentence_stripped},
+                            name=sentence_hash)
+            data_sentences_stripped = data_sentences_stripped.append(row)
+
+        # TODO LOGGING: info
+        dup_stripped_hash.sort_values(['stripped_hash', 'role'], ascending=[False, False], inplace=True)
+        print('-' * 79)
+        print('dup_stripped_hash')
+        print(dup_stripped_hash)
+        print('-' * 79)
+        print('messages')
+        print(messages)
+        # TODO LOGGING: info
+
+        previous_res['data_sentences_stripped'] = data_sentences_stripped
 
         return previous_res
 
