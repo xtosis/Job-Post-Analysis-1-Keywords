@@ -454,7 +454,7 @@ class KeywordPreprocessing(Preprocessing, SubProcessLogger):
                     messages = messages.append({'sentence_hash': sentence_hash,
                                                 'type': 'warning',
                                                 'message': 'sentence is too short: before stripping',
-                                                'data': f'|{sentence}|'},
+                                                'data': {'length': len(sentence), 'sentence': f'|{sentence}|'}},
                                                ignore_index=True)
 
             else:
@@ -462,7 +462,7 @@ class KeywordPreprocessing(Preprocessing, SubProcessLogger):
                 # TODO LOGGING: warning
                 messages = messages.append({'sentence_hash': sentence_hash,
                                             'type': 'warning',
-                                            'message': 'zero length sentence'},
+                                            'message': 'zero length sentence before stripping'},
                                            ignore_index=True)
 
             # catching unrecognized non-alphanumeric characters
@@ -470,18 +470,22 @@ class KeywordPreprocessing(Preprocessing, SubProcessLogger):
                 if flag is not None:
                     if flag not in to_strip:
 
-                        # TODO LOGGING: warning
+                        # TODO LOGGING: info
                         messages = messages.append({'sentence_hash': sentence_hash,
-                                                    'type': 'warning',
+                                                    'type': 'info',
                                                     'message': 'new alphanumeric character',
-                                                    'data': flag},
+                                                    'data': {'character': f'|{flag}|'}},
                                                    ignore_index=True)
 
                         if auto_strip:
                             to_strip = to_strip + flag
 
                             # TODO LOGGING: warning
-                            print(f'stripSentencesThenAnalyze {sentence_hash} FLAG |{flag}| will be automatically stripped')
+                            messages = messages.append({'sentence_hash': sentence_hash,
+                                                        'type': 'warning',
+                                                        'message': 'automatic stripping is enabled',
+                                                        'data': {'character': f'|{flag}|'}},
+                                                       ignore_index=True)
 
             # ----------------------------------------------------------------
 
@@ -491,12 +495,23 @@ class KeywordPreprocessing(Preprocessing, SubProcessLogger):
             # checking sentence length after stripping
             if len(sentence_stripped) < 3:
 
-                # TODO LOGGING: warning
-                messages = messages.append({'sentence_hash': sentence_hash,
-                                            'type': 'warning',
-                                            'message': 'sentence is too short: after stripping',
-                                            'data': f'|{sentence_stripped}|'},
-                                           ignore_index=True)
+                if len(sentence_stripped) == 0:
+
+                    # TODO LOGGING: warning
+                    messages = messages.append({'sentence_hash': sentence_hash,
+                                                'type': 'warning',
+                                                'message': 'zero length sentence after stripping',
+                                                'data': {'before': f'|{sentence}|'}},
+                                               ignore_index=True)
+
+                else:
+
+                    # TODO LOGGING: warning
+                    messages = messages.append({'sentence_hash': sentence_hash,
+                                                'type': 'warning',
+                                                'message': 'sentence is too short: after stripping',
+                                                'data': {'length': len(sentence_stripped), 'before': f'|{sentence}|', 'after': f'|{sentence_stripped}|'}},
+                                               ignore_index=True)
 
             # initializing role
             role = None  # None, 'parent' or 'child'
