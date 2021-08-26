@@ -546,11 +546,24 @@ class KeywordPreprocessing(Preprocessing, SubProcessLogger):
                             name=sentence_hash)
             data_sentences_stripped = data_sentences_stripped.append(row)
 
+        # frequency distribution of all unique flag_start and flag_end
+        fd_flag_start = data_sentences_stripped['flag_start'].value_counts()
+        fd_flag_end = data_sentences_stripped['flag_end'].value_counts()
+        fd_flags = pd.concat((fd_flag_start, fd_flag_end), axis=1)
+        fd_flags.fillna(0, inplace=True)
+        fd_flags['flag_start'] = fd_flags['flag_start'].astype(int)
+        fd_flags['flag_end'] = fd_flags['flag_end'].astype(int)
+        fd_flags['total'] = fd_flags.sum(axis=1)
+        fd_flags.sort_values(['total'], ascending=False, inplace=True)
+
         # TODO LOGGING: info
         dup_stripped_hash.sort_values(['stripped_hash', 'role'], ascending=[False, False], inplace=True)
         print('-' * 79)
         print('dup_stripped_hash')
         print(dup_stripped_hash)
+        print('-' * 79)
+        print('frequency distribution of flags')
+        print(fd_flags)
         print('-' * 79)
         print('messages')
         print(messages)
