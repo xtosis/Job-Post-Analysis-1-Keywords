@@ -120,7 +120,11 @@ class Preprocessing:
 
 class PreprocessingChecks:
 
-    def check_sentence_length(self, sent_current, sent_hash, msg_df, msg_level, msg_stage=None, sent_before=None, min_len=3):
+    def check_sentence_length(self, sent_current, sent_hash, msg_level='warning', msg_stage=None, sent_before=None, min_len=3):
+        # requires two variables:
+        # self.current_process
+        # self.messages
+
         res = 1
         #  1 means not too short
         #  0 means too short
@@ -151,7 +155,7 @@ class PreprocessingChecks:
                 msg['data']['len'] = sent_len
 
             # appending
-            msg_df = msg_df.append(msg, ignore_index=True)
+            self.messages = self.messages.append(msg, ignore_index=True)
 
         return res, msg_df
 
