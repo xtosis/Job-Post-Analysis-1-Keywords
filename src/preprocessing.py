@@ -323,11 +323,15 @@ class KeywordPreprocessing(Preprocessing, SubProcessLogger):
 
     def lowerSentencesThenAnalyze(self, previous_res):
 
+        # --- initializing ---------------------------------------------------
+
         # will contain lowered sentences and their subsequent lowered hashes
         data_sentences_lowered = pd.DataFrame(columns=['lowered_hash', 'role', 'sentence_lowered'])  # index: unlowered sentence hash
 
         # will contain sentences with duplicate lowered hashes
         dup_lowered_hash = pd.DataFrame(columns=['lowered_hash', 'role', 'sentence'])  # index: unlowered sentence hash
+
+        # --- processing -----------------------------------------------------
 
         for sentence_hash, sentence in previous_res['data_sentences']['sentence'].items():
             sentence_lowered = sentence.lower()
