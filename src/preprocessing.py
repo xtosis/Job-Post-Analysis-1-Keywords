@@ -163,6 +163,17 @@ class PreprocessingChecks:
 class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger):
 
     def preprocessing(self, path, template, to_strip=' /\\!.:#?-();,*+|$[]', strip_after='lowerring', auto_strip=True):
+
+        # initializations
+        self.messages = pd.DataFrame(columns=[
+            'sentence_hash',  # --- md5 hash of original sentences (no lowering, stripping, etc)
+            'process',  # --------- e.g. 'stripStentencesThenAnalyze'
+            'stage',  # ----------- e.g. 'before stripping'
+            'level',  # ----------- e.g. 'warning', 'error', etc
+            'func',  # ------------ e.g. name of the checking fucntion
+            'message',  # --------- e.g. 'zero length'
+            'data'])  # ----------- e.g. {'before': '|raw sentence|', 'after': '|processed sentence|'}
+
         raw = self.loadData(path)
         process_HTML = False
 
@@ -367,6 +378,8 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
 
         # --- initializing ---------------------------------------------------
 
+        self.current_process = 'lowerSentencesThenAnalyze'
+
         # will contain lowered sentences and their subsequent lowered hashes
         data_sentences_lowered = pd.DataFrame(columns=['lowered_hash', 'role', 'sentence_lowered'])  # index: unlowered sentence hash
 
@@ -389,13 +402,13 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
             if len(fil) == 0:
 
                 # TODO LOGGING: debug
-                print('lowerSentencesThenAnalyze', lowered_hash)
+                print(self.current_process, lowered_hash)
 
             # has a lowered hash duplicate
             else:
 
                 # TODO LOGGING: debug
-                print('lowerSentencesThenAnalyze', lowered_hash, 'child')
+                print(self.current_process, lowered_hash, 'child')
 
                 # registering the child
                 role = 'child'
@@ -411,7 +424,7 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
                 if fil.loc[original, 'role'] != 'parent':
 
                     # TODO LOGGING: debug
-                    print('lowerSentencesThenAnalyze', lowered_hash, 'parent')
+                    print(self.current_process, lowered_hash, 'parent')
 
                     data_sentences_lowered.loc[original, 'role'] = 'parent'
                     row = pd.Series({'lowered_hash': lowered_hash, 'role': 'parent',
@@ -437,6 +450,8 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
     def stripSentencesThenAnalyze(self, previous_res, to_strip, strip_after, auto_strip):
 
         # --- initializing ---------------------------------------------------
+
+        self.current_process = 'stripSentencesThenAnalyze'
 
         # will contain unique stripped sentences and their subsequent stripped hashes
         data_sentences_stripped = pd.DataFrame(columns=['stripped_hash', 'role', 'flag_start', 'flag_end', 'sentence_stripped'])  # index: unstripped sentence hash
