@@ -193,7 +193,7 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
         #         | role: None, 'paret' or 'child' (children have same lowered hash of parent)
         #         | sentence_lowered: the lowered sentence
 
-        data_sentences_lowered = processed['data_sentences_stripped']
+        data_sentences_stripped = processed['data_sentences_stripped']
         # type    | pandas.DataFrame
         # --------+-----------------------------------------------------------
         # index   | md5 hash of the sentence without lowering or stripping
