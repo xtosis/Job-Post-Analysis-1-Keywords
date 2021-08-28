@@ -390,6 +390,18 @@ class KeywordPreprocessing(Preprocessing, SubProcessLogger):
 
     def stripSentencesThenAnalyze(self, previous_res, to_strip, strip_after, auto_strip):
 
+        # --- initializing ---------------------------------------------------
+
+        # will contain unique stripped sentences and their subsequent stripped hashes
+        data_sentences_stripped = pd.DataFrame(columns=['stripped_hash', 'role', 'flag_start', 'flag_end', 'sentence_stripped'])  # index: unstripped sentence hash
+
+        # will contain sentences with duplicate stripped hashes
+        dup_stripped_hash = pd.DataFrame(columns=['stripped_hash', 'role', 'sentence'])  # index: unstripped sentence hash
+
+        # TODO LOGGING: this should be done in project logging modules
+        # errors and warnings
+        messages = pd.DataFrame(columns=['sentence_hash', 'type', 'message', 'data'])  # index: arbitrary
+
         # --- making sure inputs to the function are valid -------------------
 
         # early exit
@@ -412,18 +424,6 @@ class KeywordPreprocessing(Preprocessing, SubProcessLogger):
 
             # TODO LOGGING: error
             raise ValueError('param <strip_after> is not recognized')
-
-        # --- initializing ---------------------------------------------------
-
-        # will contain unique stripped sentences and their subsequent stripped hashes
-        data_sentences_stripped = pd.DataFrame(columns=['stripped_hash', 'role', 'flag_start', 'flag_end', 'sentence_stripped'])  # index: unstripped sentence hash
-
-        # will contain sentences with duplicate stripped hashes
-        dup_stripped_hash = pd.DataFrame(columns=['stripped_hash', 'role', 'sentence'])  # index: unstripped sentence hash
-
-        # TODO LOGGING: this should be done in project logging modules
-        # errors and warnings
-        messages = pd.DataFrame(columns=['sentence_hash', 'type', 'message', 'data'])  # index: arbitrary
 
         # --- processing -----------------------------------------------------
 
