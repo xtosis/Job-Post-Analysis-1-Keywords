@@ -118,7 +118,45 @@ class Preprocessing:
         return cleaned
 
 
-class KeywordPreprocessing(Preprocessing, SubProcessLogger):
+class PreprocessingChecks:
+
+    def check_sentence_length(self, sent_current, sent_hash, msg_df, msg_level, msg_stage=None, sent_before=None, min_len=3):
+        res = 1
+        #  1 means not too short
+        #  0 means too short
+        # -1 means zero length
+        sent_len = len(sent_current)
+
+        if sent_len < min_len:
+            msg = {'sentence_hash': sent_hash,
+                   'process': self.current_process,
+                   'stage': msg_stage,
+                   'level': msg_type,
+                   'func': 'check_sentence_length',
+                   'data': dict()}
+
+            if sent_before is not None:
+                msg['data']['before'] = f'|{sent_before}|'
+
+            # zero length
+            if sent_len == 0:
+                res = -1
+                msg['message'] = 'zero length'
+
+            # too short
+            else:
+                res = 0
+                msg['message'] = f'shorter than {min_len}'
+                msg['data']['current'] = f'|{sent_current}|'
+                msg['data']['len'] = sent_len
+
+            # appending
+            msg_df = msg_df.append(msg, ignore_index=True)
+
+        return res, msg_df
+
+
+class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger):
 
     def preprocessing(self, path, template, to_strip=' /\\!.:#?-();,*+|$[]', strip_after='lowerring', auto_strip=True):
         raw = self.loadData(path)
