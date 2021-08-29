@@ -432,13 +432,13 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
             if len(fil) == 0:
 
                 # TODO LOGGING: debug
-                print(self.current_process, lowered_hash)
+                print(f'{self.current_process} {sentence_hash} [{stage}] UNQ: {sentence_lowered}')
 
             # has a lowered hash duplicate
             else:
 
                 # TODO LOGGING: debug
-                print(self.current_process, lowered_hash, 'child')
+                print(f'{self.current_process} {sentence_hash} [{stage}] DUP: {sentence_lowered}')
 
                 # registering the child
                 role = 'child'
@@ -450,18 +450,18 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
                 # which will be treated as 'parent' of subsequent duplicates
                 original = fil.index.values[0]
 
+                # TODO LOGGING: debug
+                print(f'{self.current_process} {sentence_hash} [{stage}] parent: {original}')
+
                 # registering parent if not already registered
                 if fil.loc[original, 'role'] != 'parent':
-
-                    # TODO LOGGING: debug
-                    print(self.current_process, lowered_hash, 'parent')
-
                     data_sentences_lowered.loc[original, 'role'] = 'parent'
                     row = pd.Series({'lowered_hash': lowered_hash, 'role': 'parent',
                                      'sentence': previous_data[original]},
                                     name=original)
                     dup_lowered_hash = dup_lowered_hash.append(row)
 
+            # appending
             row = pd.Series({'lowered_hash': lowered_hash, 'role': role, 'sentence_lowered': sentence_lowered},
                             name=sentence_hash)
             data_sentences_lowered = data_sentences_lowered.append(row)
