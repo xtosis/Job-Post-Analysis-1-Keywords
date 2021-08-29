@@ -194,7 +194,7 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
         processed = self.final_clean_up(processed)
         processed = self.splitSentencesThenAnalyze(processed)
         processed = self.lowerSentencesThenAnalyze(processed)
-        processed = self.stripSentencesThenAnalyze(processed, to_strip, strip_after, auto_strip)
+        # processed = self.stripSentencesThenAnalyze(processed, to_strip, strip_after, auto_strip)
 
         data_sentences = processed['data_sentences']
         # type    | pandas.DataFrame
@@ -212,7 +212,7 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
         #         | role: None, 'paret' or 'child' (children have same lowered hash of parent)
         #         | sentence_lowered: the lowered sentence
 
-        data_sentences_stripped = processed['data_sentences_stripped']
+        # data_sentences_stripped = processed['data_sentences_stripped']
         # type    | pandas.DataFrame
         # --------+-----------------------------------------------------------
         # index   | md5 hash of the sentence without lowering or stripping
@@ -394,8 +394,10 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
         dup_lowered_hash = pd.DataFrame(columns=['lowered_hash', 'role', 'sentence'])  # index: unlowered sentence hash
 
         # --- processing -----------------------------------------------------
+        previous_data = previous_res['data_sentences']['sentence']
 
-        for sentence_hash, sentence in previous_res['data_sentences']['sentence'].items():
+        for sentence_hash, sentence in previous_data.items():
+
             sentence_lowered = sentence.lower()
             lowered_hash = hashlib.md5(sentence_lowered.encode()).hexdigest()
 
@@ -435,7 +437,7 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
 
                     data_sentences_lowered.loc[original, 'role'] = 'parent'
                     row = pd.Series({'lowered_hash': lowered_hash, 'role': 'parent',
-                                     'sentence': previous_res['data_sentences'].loc[original, 'sentence']},
+                                     'sentence': previous_data[original]},
                                     name=original)
                     dup_lowered_hash = dup_lowered_hash.append(row)
 
