@@ -611,7 +611,7 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
                         if fil.loc[original, 'role'] != 'parent':
                             data_sentences_stripped.loc[original, 'role'] = 'parent'
                             row = pd.Series({'stripped_hash': stripped_hash, 'role': 'parent',
-                                             'sentence': previous_res['data_sentences'].loc[original, 'sentence']},
+                                             'sentence': previous_data[original]},
                                             name=original)
                             dup_stripped_hash = dup_stripped_hash.append(row)
 
