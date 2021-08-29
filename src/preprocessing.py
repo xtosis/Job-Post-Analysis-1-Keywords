@@ -398,8 +398,29 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
 
         for sentence_hash, sentence in previous_data.items():
 
+            # --- sentence length check: before lowering ---------------------
+            stage = 'before-lowering'
+            sentence_length_before_lowering = self.check_sentence_length(
+                sentence,
+                sentence_hash,
+                msg_stage=stage,
+                msg_level='error',
+            )
+
+            # if length is not ok
+            if sentence_length_before_lowering != 1:
+
+                # TODO LOGGING: error
+                error_text = 'ABORTED processing sentence: bad length'
+                print(f'{self.current_process} {sentence_hash} [{stage}] {error_text}')
+                continue
+
+            # --- lowering ---------------------------------------------------
             sentence_lowered = sentence.lower()
             lowered_hash = hashlib.md5(sentence_lowered.encode()).hexdigest()
+
+            # --- checking duplicity -----------------------------------------
+            stage = 'checking-duplicity'
 
             # initializing role
             role = None  # None, 'parent' or 'child'
@@ -450,6 +471,9 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
         print('-' * 79)
         print('dup_lowered_hash')
         print(dup_lowered_hash)
+        print('-' * 79)
+        print('messages')
+        print(self.messages)
         # TODO LOGGING: info
 
         previous_res['data_sentences_lowered'] = data_sentences_lowered
