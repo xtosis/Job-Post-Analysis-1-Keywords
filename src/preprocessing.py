@@ -120,7 +120,7 @@ class Preprocessing:
 
 class PreprocessingChecks:
 
-    def check_sentence_length(self, sent_current, sent_hash, msg_level='warning', msg_stage=None, sent_before=None, min_len=3):
+    def check_sentence_length(self, sent_current, sent_hash, msg_level=None, msg_stage=None, sent_before=None, min_len=3):
         # requires two variables:
         # self.current_process
         # self.messages
@@ -135,7 +135,7 @@ class PreprocessingChecks:
             msg = {'sentence_hash': sent_hash,
                    'process': self.current_process,
                    'stage': msg_stage,
-                   'level': msg_type,
+                   'level': msg_level,
                    'func': 'check_sentence_length',
                    'data': dict()}
 
@@ -146,6 +146,8 @@ class PreprocessingChecks:
             if sent_len == 0:
                 res = -1
                 msg['message'] = 'zero length'
+                if msg_level is None:
+                    msg['level'] = 'error'
 
             # too short
             else:
@@ -153,6 +155,8 @@ class PreprocessingChecks:
                 msg['message'] = f'shorter than {min_len}'
                 msg['data']['current'] = f'|{sent_current}|'
                 msg['data']['len'] = sent_len
+                if msg_level is None:
+                    msg['level'] = 'warning'
 
             # appending
             self.messages = self.messages.append(msg, ignore_index=True)
