@@ -476,7 +476,7 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
 
             return previous_res
 
-        # deciding what version of the sentences to process
+        # previous data auto selection deciding what version of the sentences to process
         if strip_after == 'lowerring':
             previous_data = previous_res['data_sentences_lowered']
             previous_data = previous_data[previous_data['role'] != 'child']  # dropping children (duplicates)
