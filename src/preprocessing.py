@@ -157,7 +157,7 @@ class PreprocessingChecks:
             # appending
             self.messages = self.messages.append(msg, ignore_index=True)
 
-        return res, msg_df
+        return res
 
 
 class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger):
