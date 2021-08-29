@@ -270,6 +270,9 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
         return processed_html
 
     def splitSentencesThenAnalyze(self, text_dict):
+
+        self.current_process = 'splitSentencesThenAnalyze'
+
         # unique post to sentence connections
         map_sentence_lines = pd.DataFrame(columns=['file', 'id_s', 'sentence_hash'])  # index: arbitrary
 
@@ -304,7 +307,7 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
                 if sentence_hash not in unq_sentences.index.values:
 
                     # TODO LOGGING: debug
-                    print('splitSentencesThenAnalyze {:} line {:02g} UNQ-SENTENCE: {:}'.format(name, i, sentence))
+                    print('{:} {:} line {:02g} UNQ-SENTENCE: {:}'.format(self.current_process, name, i, sentence))
 
                     row = pd.Series({'words': words, 'commas': commas, 'sentence': sentence}, name=sentence_hash)
                     unq_sentences = unq_sentences.append(row)
@@ -313,7 +316,7 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
                 else:
 
                     # TODO LOGGING: debug
-                    print('splitSentencesThenAnalyze {:} line {:02g} DUP-SENTENCE: {:}'.format(name, i, sentence[:]))
+                    print('{:} {:} line {:02g} DUP-SENTENCE: {:}'.format(self.current_process, name, i, sentence[:]))
 
                     # first occurance: add row
                     if sentence_hash not in dup_sentences.index.values:
@@ -339,7 +342,7 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
             if text_hash not in map_text_hashes.keys():
 
                 # TODO LOGGING: debug
-                print('splitSentencesThenAnalyze {:} UNQ-FILE-HASH'.format(name))
+                print('{:} {:} UNQ-FILE-HASH'.format(self.current_process, name))
 
                 map_text_hashes[text_hash] = name
                 map_sentence_lines = map_sentence_lines.append(cur_p2sc, ignore_index=True)
@@ -349,7 +352,7 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
                 org = map_text_hashes[text_hash]
 
                 # TODO LOGGING: debug
-                print('splitSentencesThenAnalyze {:} DUP-FILE-HASH parent: {:}'.format(name, org))
+                print('{:} {:} DUP-FILE-HASH parent: {:}'.format(self.current_process, name, org))
 
                 # first occurance: add original file name to keys
                 if org not in dup_text_hash.keys():
@@ -469,7 +472,7 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
         if to_strip is None or strip_after is None:
 
             # TODO LOGGING: info
-            print('stripSentencesThenAnalyze EARLY EXIT')
+            print(f'{self.current_process} EARLY EXIT')
 
             return previous_res
 
@@ -584,13 +587,13 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
             if len(fil) == 0:
 
                 # TODO LOGGING: debug
-                print('stripSentencesThenAnalyze', stripped_hash)
+                print(self.current_process, stripped_hash)
 
             # has a stripped hash duplicate
             else:
 
                 # TODO LOGGING: debug
-                print('stripSentencesThenAnalyze', stripped_hash, 'child')
+                print(self.current_process, stripped_hash, 'child')
 
                 # registering the child
                 role = 'child'
@@ -606,7 +609,7 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
                 if fil.loc[original, 'role'] != 'parent':
 
                     # TODO LOGGING: debug
-                    print('stripSentencesThenAnalyze', stripped_hash, 'parent')
+                    print(self.current_process, stripped_hash, 'parent')
 
                     data_sentences_stripped.loc[original, 'role'] = 'parent'
                     row = pd.Series({'stripped_hash': stripped_hash, 'role': 'parent',
