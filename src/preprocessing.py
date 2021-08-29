@@ -491,7 +491,7 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
 
         # --- processing -----------------------------------------------------
 
-        for sentence_hash, sentence in previous_res['data_sentences_lowered']['sentence_lowered'].items():
+        for sentence_hash, sentence in previous_data.items():
 
             # --- sentence length check: before stripping --------------------
             stage = 'before-flagging'
@@ -586,13 +586,13 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
                     if len(fil) == 0:
 
                         # TODO LOGGING: debug
-                        print(f'{self.current_process} {sentence_hash} [{stage}] ORG\n\n{sentence_stripped}\n')
+                        print(f'{self.current_process} {sentence_hash} [{stage}] UNQ: {sentence_stripped}')
 
                     # has a stripped_hash duplicate
                     else:
 
                         # TODO LOGGING: debug
-                        print(f'{self.current_process} {sentence_hash} [{stage}] DUP\n\n{sentence_stripped}\n')
+                        print(f'{self.current_process} {sentence_hash} [{stage}] DUP: {sentence_stripped}')
 
                         # registering the child
                         role = 'child'
