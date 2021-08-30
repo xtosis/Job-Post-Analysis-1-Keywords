@@ -296,9 +296,27 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
 
         for name, text in text_dict.items():
 
+            # --- checking file length ---------------------------------------
+            stage = 'before-processing'
+            file_hash = hashlib.md5(text.lower().encode()).hexdigest()
+            file_length_before_processing = self.check_sentence_length(
+                text,
+                file_hash,
+                msg_stage=stage,
+                msg_level='error',
+                min_len=100,
+            )
+
+            # if file length is not ok
+            if file_length_before_processing != 1:
+
+                # TODO LOGGING: error
+                error_text = 'ABORTED processing file: bad length'
+                print(f'{self.current_process} {name} [{stage}] {error_text}')
+                continue
+
             # --- checking file duplicity ------------------------------------
             stage = 'file-duplicity'
-            file_hash = hashlib.md5(text.lower().encode()).hexdigest()
 
             # file is a duplicate
             if file_hash in map_text_hashes.keys():
@@ -371,6 +389,9 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
         print('-' * 79)
         print('dup_text_hashes')
         print(pd.Series(dup_text_hash, name='dup_text_hashes: org vs dups'))
+        print('-' * 79)
+        print('message ')
+        print(self.messages)
         # TODO LOGGING end: info
 
         res = {'data_sentences': unq_sentences,
