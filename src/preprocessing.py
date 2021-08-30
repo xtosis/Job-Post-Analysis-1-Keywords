@@ -193,7 +193,7 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
 
         processed = self.final_clean_up(processed)
         processed = self.splitSentencesThenAnalyze(processed)
-        processed = self.lowerSentencesThenAnalyze(processed)
+        # processed = self.lowerSentencesThenAnalyze(processed)
         # processed = self.stripSentencesThenAnalyze(processed, to_strip, strip_after, auto_strip)
 
         data_sentences = processed['data_sentences']
@@ -204,7 +204,7 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
         #         | commas: # of commas in the sentence
         #         | sentence: sentence text without lowering
 
-        data_sentences_lowered = processed['data_sentences_lowered']
+        # data_sentences_lowered = processed['data_sentences_lowered']
         # type    | pandas.DataFrame
         # --------+-----------------------------------------------------------
         # index   | md5 hash of the sentence without lowering
@@ -275,6 +275,8 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
 
     def splitSentencesThenAnalyze(self, text_dict):
 
+        # --- initializing ---------------------------------------------------
+
         self.current_process = 'splitSentencesThenAnalyze'
 
         # unique post to sentence connections
@@ -285,42 +287,61 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
         dup_sentences = pd.DataFrame(columns=['count', 'sentence'])  # index: sentence_hash
 
         # text hashes for files
-        map_text_hashes = dict()  # index: text_hash
+        map_text_hashes = dict()  # index: file_hash
 
         # duplicate files
         dup_text_hash = dict()  # index: file name
 
-        for name, text in text_dict.items():
-            sentences = text.splitlines()
-            text_hash = ''
+        # --- processing each file -------------------------------------------
 
-            # current post to sentence connections (text split into lines)
-            cur_p2sc = pd.DataFrame(columns=['file', 'id_s', 'sentence_hash'])
+        for name, text in text_dict.items():
+
+            # --- checking file duplicity ------------------------------------
+            stage = 'file-duplicity'
+            file_hash = hashlib.md5(text.lower().encode()).hexdigest()
+
+            # file is a duplicate
+            if file_hash in map_text_hashes.keys():
+                org = map_text_hashes[file_hash]
+
+                # TODO LOGGING: debug
+                print(f'{self.current_process} {name} [{stage}] DUP: {org}')
+
+                # first occurance: add original file name to keys
+                if org not in dup_text_hash.keys():
+                    dup_text_hash[org] = []
+
+                # append duplicate filename
+                dup_text_hash[org].append(name)
+                continue
+
+            # TODO LOGGING: debug
+            print(f'{self.current_process} {name} [{stage}] UNQ')
+
+            # registering unique file
+            map_text_hashes[file_hash] = name
+            sentences = text.splitlines()
+
+            # --- processing each sentence -----------------------------------
 
             for i, sentence in enumerate(sentences):
 
-                # --- computing sentence data: words, commas, sentence hash & incrementing text_hash
-                words = sentence.count(' ') + 1
-                commas = sentence.count(',')
+                # --- registering line number --------------------------------
                 sentence_hash = hashlib.md5(sentence.encode()).hexdigest()
-                text_hash = text_hash + sentence_hash
+                map_sentence_lines = map_sentence_lines.append({
+                    'file': name,
+                    'id_s': i,
+                    'sentence_hash': sentence_hash
+                }, ignore_index=True)
 
-                # --- checking sentence hashes for duplicates
+                # --- checking duplicity of sentences ------------------------
+                stage = 'checking-duplicity'
 
-                # sentence is unique: update unq_sentences
-                if sentence_hash not in unq_sentences.index.values:
-
-                    # TODO LOGGING: debug
-                    print('{:} {:} line {:02g} UNQ-SENTENCE: {:}'.format(self.current_process, name, i, sentence))
-
-                    row = pd.Series({'words': words, 'commas': commas, 'sentence': sentence}, name=sentence_hash)
-                    unq_sentences = unq_sentences.append(row)
-
-                # sentence is a duplicate: update unq_sentences
-                else:
+                # sentence is a duplicate
+                if sentence_hash in unq_sentences.index.values:
 
                     # TODO LOGGING: debug
-                    print('{:} {:} line {:02g} DUP-SENTENCE: {:}'.format(self.current_process, name, i, sentence[:]))
+                    print(f'{self.current_process} {sentence_hash} [{stage}] DUP: {sentence}')
 
                     # first occurance: add row
                     if sentence_hash not in dup_sentences.index.values:
@@ -331,39 +352,16 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
                     else:
                         val = dup_sentences.loc[sentence_hash, 'count'] + 1
                         dup_sentences.loc[sentence_hash, 'count'] = val
+                    continue
 
-                # --- constructing current p2sc
-                cur_p2sc = cur_p2sc.append({
-                    'file': name,
-                    'id_s': i,
-                    'sentence_hash': sentence_hash
-                }, ignore_index=True)
-
-            # --- checking post text_hash for duplicates
-            text_hash = hashlib.md5(text_hash.encode()).hexdigest()
-
-            # text_hash is unique (unique text in post): update map_text_hashes & map_sentence_lines
-            if text_hash not in map_text_hashes.keys():
+                # --- registering unique sentence ----------------------------
+                words = sentence.count(' ') + 1
+                commas = sentence.count(',')
+                row = pd.Series({'words': words, 'commas': commas, 'sentence': sentence}, name=sentence_hash)
+                unq_sentences = unq_sentences.append(row)
 
                 # TODO LOGGING: debug
-                print('{:} {:} UNQ-FILE-HASH'.format(self.current_process, name))
-
-                map_text_hashes[text_hash] = name
-                map_sentence_lines = map_sentence_lines.append(cur_p2sc, ignore_index=True)
-
-            # text_hash is a duplicate: update dup_text_hash
-            else:
-                org = map_text_hashes[text_hash]
-
-                # TODO LOGGING: debug
-                print('{:} {:} DUP-FILE-HASH parent: {:}'.format(self.current_process, name, org))
-
-                # first occurance: add original file name to keys
-                if org not in dup_text_hash.keys():
-                    dup_text_hash[org] = []
-
-                # append duplicate filename
-                dup_text_hash[org].append(name)
+                print(f'{self.current_process} {sentence_hash} [{stage}] UNQ: {sentence}')
 
         # TODO LOGGING start: info
         dup_sentences.sort_values(['count'], inplace=True)
