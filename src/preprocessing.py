@@ -305,10 +305,11 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
             file_hash = hashlib.md5(text.lower().encode()).hexdigest()
             file_length_before_processing = self.check_sentence_length(
                 text,
-                file_hash,
+                None,
                 msg_stage=stage,
                 msg_level='error',
                 min_len=100,
+                other_data={'file': name}
             )
 
             # if file length is not ok
