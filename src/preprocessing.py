@@ -197,8 +197,8 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
 
         processed = self.final_clean_up(processed)
         processed = self.splitSentencesThenAnalyze(processed)
-        # processed = self.lowerSentencesThenAnalyze(processed)
-        # processed = self.stripSentencesThenAnalyze(processed, to_strip, strip_after, auto_strip)
+        processed = self.lowerSentencesThenAnalyze(processed)
+        processed = self.stripSentencesThenAnalyze(processed, to_strip, strip_after, auto_strip)
 
         data_sentences = processed['data_sentences']
         # type    | pandas.DataFrame
@@ -208,7 +208,7 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
         #         | commas: # of commas in the sentence
         #         | sentence: sentence text without lowering
 
-        # data_sentences_lowered = processed['data_sentences_lowered']
+        data_sentences_lowered = processed['data_sentences_lowered']
         # type    | pandas.DataFrame
         # --------+-----------------------------------------------------------
         # index   | md5 hash of the sentence without lowering
@@ -216,7 +216,7 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
         #         | role: None, 'paret' or 'child' (children have same lowered hash of parent)
         #         | sentence_lowered: the lowered sentence
 
-        # data_sentences_stripped = processed['data_sentences_stripped']
+        data_sentences_stripped = processed['data_sentences_stripped']
         # type    | pandas.DataFrame
         # --------+-----------------------------------------------------------
         # index   | md5 hash of the sentence without lowering or stripping
@@ -352,12 +352,20 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
                 # --- sentence length check: before registering --------------
                 stage = 'before-registering'
                 sentence_hash = hashlib.md5(sentence.encode()).hexdigest()
+
+                # creating other data for debugging
+                other_data = {'file': name}
+                if i > 0:
+                    other_data['i-1'] = sentences[i - 1]  # previous sentence
+                if i + 1 < len(sentences):
+                    other_data['i+1'] = sentences[i + 1]  # next sentence
+
                 sentence_length_before_registering = self.check_sentence_length(
                     sentence,
                     sentence_hash,
-                    sent_before=name,
                     msg_stage=stage,
                     msg_level='error',
+                    other_data=other_data,
                 )
 
                 # if length is not ok
@@ -365,7 +373,7 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
                     reduce_i = reduce_i + 1
 
                     # TODO LOGGING: error
-                    error_text = 'ABORTED processing sentence: bad length'
+                    error_text = 'ABORTED registering sentence: bad length'
                     print(f'{self.current_process} {sentence_hash} [{stage}] {error_text}')
                     continue
 
