@@ -585,121 +585,119 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
                 # TODO LOGGING: error
                 error_text = 'ABORTED processing sentence: bad length'
                 print(f'{self.current_process} {sentence_hash} [{stage}] {error_text}')
+                continue
 
-            # length is ok
-            else:
+            # --- flagging -----------------------------------------------
 
-                # --- flagging -----------------------------------------------
+            # initializing flags
+            flag_start = None
+            flag_end = None
 
-                # initializing flags
-                flag_start = None
-                flag_end = None
+            # flagging start
+            if not sentence[0].isalnum():
+                flag_start = sentence[0]
 
-                # flagging start
-                if not sentence[0].isalnum():
-                    flag_start = sentence[0]
+            # flagging end
+            if not sentence[-1].isalnum():
+                flag_end = sentence[-1]
 
-                # flagging end
-                if not sentence[-1].isalnum():
-                    flag_end = sentence[-1]
+            # catching unrecognized non-alphanumeric characters
+            stage = 'after-flagging'
+            for flag in (flag_start, flag_end):
+                if flag is not None:
+                    if flag not in to_strip:
 
-                # catching unrecognized non-alphanumeric characters
-                stage = 'after-flagging'
-                for flag in (flag_start, flag_end):
-                    if flag is not None:
-                        if flag not in to_strip:
+                        # notifying about new alphanumeric character so it can be added later
+                        msg = {'sentence_hash': sentence_hash,
+                               'process': self.current_process,
+                               'stage': stage,
+                               'level': 'info_new_format',
+                               'message': 'new alphanumeric character',
+                               'data': {'character': f'|{flag}|'}}
+                        self.messages = self.messages.append(msg, ignore_index=True)
 
-                            # notifying about new alphanumeric character so it can be added later
+                        # warning about auto stripping of new alphanumeric characters
+                        if auto_strip:
+                            to_strip = to_strip + flag
                             msg = {'sentence_hash': sentence_hash,
                                    'process': self.current_process,
                                    'stage': stage,
-                                   'level': 'info_new_format',
-                                   'message': 'new alphanumeric character',
+                                   'level': 'warning',
+                                   'message': 'automatic stripping is enabled',
                                    'data': {'character': f'|{flag}|'}}
                             self.messages = self.messages.append(msg, ignore_index=True)
 
-                            # warning about auto stripping of new alphanumeric characters
-                            if auto_strip:
-                                to_strip = to_strip + flag
-                                msg = {'sentence_hash': sentence_hash,
-                                       'process': self.current_process,
-                                       'stage': stage,
-                                       'level': 'warning',
-                                       'message': 'automatic stripping is enabled',
-                                       'data': {'character': f'|{flag}|'}}
-                                self.messages = self.messages.append(msg, ignore_index=True)
+            # --- stripping ----------------------------------------------
+            sentence_stripped = sentence.strip(to_strip)
+            stripped_hash = hashlib.md5(sentence_stripped.encode()).hexdigest()
+            stage = 'after-stripping'
 
-                # --- stripping ----------------------------------------------
-                sentence_stripped = sentence.strip(to_strip)
-                stripped_hash = hashlib.md5(sentence_stripped.encode()).hexdigest()
-                stage = 'after-stripping'
+            # --- sentence length check: after stripping -----------------
+            sentence_length_after_stripping = self.check_sentence_length(
+                sentence_stripped,  # sentence text after stripping (sent_current)
+                sentence_hash,
+                sent_before=sentence,  # sentence text before stripping
+                msg_stage=stage,
+                msg_level='error',
+            )
 
-                # --- sentence length check: after stripping -----------------
-                sentence_length_after_stripping = self.check_sentence_length(
-                    sentence_stripped,  # sentence text after stripping (sent_current)
-                    sentence_hash,
-                    sent_before=sentence,  # sentence text before stripping
-                    msg_stage=stage,
-                    msg_level='error',
-                )
+            if sentence_length_after_stripping != 1:
 
-                if sentence_length_after_stripping != 1:
+                # TODO LOGGING: error
+                error_text = 'ABORTED appending sentence: bad length'
+                print(f'{self.current_process} {sentence_hash} [{stage}] {error_text}')
+                continue
 
-                    # TODO LOGGING: error
-                    error_text = 'ABORTED appending sentence: bad length'
-                    print(f'{self.current_process} {sentence_hash} [{stage}] {error_text}')
+            # --- checking duplicity and appending -------------------
+            stage = 'checking-duplicity'
 
-                else:
-                    # --- checking duplicity and appending -------------------
-                    stage = 'checking-duplicity'
+            # initializing role
+            role = None  # None, 'parent' or 'child'
 
-                    # initializing role
-                    role = None  # None, 'parent' or 'child'
+            # filtering for duplicate stripped hashes
+            fil = copy.deepcopy(data_sentences_stripped.query(f'stripped_hash == "{stripped_hash}"'))
 
-                    # filtering for duplicate stripped hashes
-                    fil = copy.deepcopy(data_sentences_stripped.query(f'stripped_hash == "{stripped_hash}"'))
+            # unique stripped_hash
+            if len(fil) == 0:
 
-                    # unique stripped_hash
-                    if len(fil) == 0:
+                # TODO LOGGING: debug
+                print(f'{self.current_process} {sentence_hash} [{stage}] UNQ: {sentence_stripped}')
 
-                        # TODO LOGGING: debug
-                        print(f'{self.current_process} {sentence_hash} [{stage}] UNQ: {sentence_stripped}')
+            # has a stripped_hash duplicate
+            else:
 
-                    # has a stripped_hash duplicate
-                    else:
+                # TODO LOGGING: debug
+                print(f'{self.current_process} {sentence_hash} [{stage}] DUP: {sentence_stripped}')
 
-                        # TODO LOGGING: debug
-                        print(f'{self.current_process} {sentence_hash} [{stage}] DUP: {sentence_stripped}')
+                # registering the child
+                role = 'child'
+                row = pd.Series({'stripped_hash': stripped_hash, 'role': role, 'sentence': sentence},
+                                name=sentence_hash)
+                dup_stripped_hash = dup_stripped_hash.append(row)
 
-                        # registering the child
-                        role = 'child'
-                        row = pd.Series({'stripped_hash': stripped_hash, 'role': role, 'sentence': sentence},
-                                        name=sentence_hash)
-                        dup_stripped_hash = dup_stripped_hash.append(row)
+                # getting unstripped sentence hash of the first occurance...
+                # which will be treated as 'parent' of subsequent duplicates
+                original = fil.index.values[0]
 
-                        # getting unstripped sentence hash of the first occurance...
-                        # which will be treated as 'parent' of subsequent duplicates
-                        original = fil.index.values[0]
+                # TODO LOGGING: debug
+                print(f'{self.current_process} {sentence_hash} [{stage}] parent: {original}')
 
-                        # TODO LOGGING: debug
-                        print(f'{self.current_process} {sentence_hash} [{stage}] parent: {original}')
+                # registering parent if not already registered
+                if fil.loc[original, 'role'] != 'parent':
+                    data_sentences_stripped.loc[original, 'role'] = 'parent'
+                    row = pd.Series({'stripped_hash': stripped_hash, 'role': 'parent',
+                                     'sentence': previous_data[original]},
+                                    name=original)
+                    dup_stripped_hash = dup_stripped_hash.append(row)
 
-                        # registering parent if not already registered
-                        if fil.loc[original, 'role'] != 'parent':
-                            data_sentences_stripped.loc[original, 'role'] = 'parent'
-                            row = pd.Series({'stripped_hash': stripped_hash, 'role': 'parent',
-                                             'sentence': previous_data[original]},
-                                            name=original)
-                            dup_stripped_hash = dup_stripped_hash.append(row)
-
-                    # appending
-                    row = pd.Series({'stripped_hash': stripped_hash,
-                                     'role': role,
-                                     'flag_start': flag_start,
-                                     'flag_end': flag_end,
-                                     'sentence_stripped': sentence_stripped},
-                                    name=sentence_hash)
-                    data_sentences_stripped = data_sentences_stripped.append(row)
+            # appending
+            row = pd.Series({'stripped_hash': stripped_hash,
+                             'role': role,
+                             'flag_start': flag_start,
+                             'flag_end': flag_end,
+                             'sentence_stripped': sentence_stripped},
+                            name=sentence_hash)
+            data_sentences_stripped = data_sentences_stripped.append(row)
 
         # --- exit stats -----------------------------------------------------
 
