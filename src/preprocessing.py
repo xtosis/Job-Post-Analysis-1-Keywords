@@ -240,6 +240,13 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
         #         | id_s: line # of the sentence in the cleaned text of the post
         #         | sentence_hash: md5 hash of the sentence without lowering
 
+        # exit summary
+        # TODO LOGGING: info
+        print('-' * 79)
+        print('messages')
+        print(self.messages)
+        # TODO LOGGING: info
+
     def loadData(self, path):
         raw = dict()
         for name in os.listdir(path):
@@ -422,9 +429,6 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
         print('-' * 79)
         print('dup_text_hashes')
         print(pd.Series(dup_text_hash, name='dup_text_hashes: org vs dups'))
-        print('-' * 79)
-        print('message ')
-        print(self.messages)
         # TODO LOGGING end: info
 
         res = {'data_sentences': unq_sentences,
@@ -523,9 +527,6 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
         print('-' * 79)
         print('dup_lowered_hash')
         print(dup_lowered_hash)
-        print('-' * 79)
-        print('messages')
-        print(self.messages)
         # TODO LOGGING: info
 
         previous_res['data_sentences_lowered'] = data_sentences_lowered
@@ -720,9 +721,6 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
         print('-' * 79)
         print('frequency distribution of flags')
         print(fd_flags)
-        print('-' * 79)
-        print('messages')
-        print(self.messages)
         # TODO LOGGING: info
 
         previous_res['data_sentences_stripped'] = data_sentences_stripped
