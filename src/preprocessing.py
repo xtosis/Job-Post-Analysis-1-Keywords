@@ -139,10 +139,6 @@ class PreprocessingChecks:
                    'func': 'check_sentence_length',
                    'data': dict()}
 
-            if other_data is not None:
-                for k, v in other_data.items:
-                    msg['data'][k] = f'|{v}|'
-
             if sent_before is not None:
                 msg['data']['before'] = f'|{sent_before}|'
 
@@ -161,6 +157,10 @@ class PreprocessingChecks:
                 msg['data']['len'] = sent_len
                 if msg_level is None:
                     msg['level'] = 'warning'
+
+            if other_data is not None:
+                for k, v in other_data.items():
+                    msg['data'][k] = f'|{v}|'
 
             # appending
             self.messages = self.messages.append(msg, ignore_index=True)
