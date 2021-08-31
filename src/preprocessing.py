@@ -120,7 +120,7 @@ class Preprocessing:
 
 class PreprocessingChecks:
 
-    def check_sentence_length(self, sent_current, sent_hash, msg_level=None, msg_stage=None, sent_before=None, min_len=3):
+    def check_sentence_length(self, sent_current, sent_hash, msg_level=None, msg_stage=None, sent_before=None, min_len=3, other_data=None):
         # requires two variables:
         # self.current_process
         # self.messages
@@ -138,6 +138,10 @@ class PreprocessingChecks:
                    'level': msg_level,
                    'func': 'check_sentence_length',
                    'data': dict()}
+
+            if other_data is not None:
+                for k, v in other_data.items:
+                    msg['data'][k] = f'|{v}|'
 
             if sent_before is not None:
                 msg['data']['before'] = f'|{sent_before}|'
