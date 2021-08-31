@@ -342,13 +342,33 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
 
             # --- processing each sentence -----------------------------------
 
+            reduce_i = 0
             for i, sentence in enumerate(sentences):
 
-                # --- registering line number --------------------------------
+                # --- sentence length check: before registering --------------
+                stage = 'before-registering'
                 sentence_hash = hashlib.md5(sentence.encode()).hexdigest()
+                sentence_length_before_registering = self.check_sentence_length(
+                    sentence,
+                    sentence_hash,
+                    sent_before=name,
+                    msg_stage=stage,
+                    msg_level='error',
+                )
+
+                # if length is not ok
+                if sentence_length_before_registering != 1:
+                    reduce_i = reduce_i + 1
+
+                    # TODO LOGGING: error
+                    error_text = 'ABORTED processing sentence: bad length'
+                    print(f'{self.current_process} {sentence_hash} [{stage}] {error_text}')
+                    continue
+
+                # --- registering line number --------------------------------
                 map_sentence_lines = map_sentence_lines.append({
                     'file': name,
-                    'id_s': i,
+                    'id_s': i - reduce_i,
                     'sentence_hash': sentence_hash
                 }, ignore_index=True)
 
