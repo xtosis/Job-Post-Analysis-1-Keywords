@@ -172,7 +172,7 @@ class PreprocessingChecks:
         original = None
 
         # filtering for duplicate sent_hashes
-        fil = copy.deepcopy(data.query(f'{column}_hash == "{sent_hash}"'))
+        fil = copy.deepcopy(data.query(f'{name}_hash == "{sent_hash}"'))
 
         # has a unique sent_hash
         if len(fil) == 0:
@@ -195,7 +195,7 @@ class PreprocessingChecks:
             # updating dropped data report --------------------------------------
             self.dropped_data_report = self.dropped_data_report.append({
                 'target': f'data_sentences_{name}',
-                'id': sentence_hash,
+                'id': sent_hash,
                 'process': self.current_process,
                 'stage': stage,
                 'reason': 'duplicate',
@@ -203,6 +203,69 @@ class PreprocessingChecks:
             }, ignore_index=True)
 
         return original
+
+    def check_file(self, data, f_name, f_hash, f_text, target, min_len=100):
+
+        # --- checking file length -------------------------------------------
+        stage = 'checking-file-length'
+        file_length = self.check_sentence_length(
+            f_text,
+            f_hash,
+            msg_stage=stage,
+            msg_level='error',
+            min_len=min_len,
+            other_data={'file_name': f_name}
+        )
+
+        # if file length is not ok
+        if file_length != 1:
+
+            # TODO LOGGING: error
+            error_text = f'ABORTED processing file {f_name}: bad length'
+            print(f'{self.current_process} {f_hash} [{stage}] {error_text}')
+
+            # updating dropped data report
+            self.dropped_data_report = self.dropped_data_report.append({
+                'target': target,
+                'id': f_name,
+                'process': self.current_process,
+                'stage': stage,
+                'reason': 'bad-length',
+                'data': {'file-hash': f_hash, 'file-text': f'|{f_text}|'},
+            }, ignore_index=True)
+
+            return False
+
+        # --- checking file duplicity ----------------------------------------
+        stage = 'checking-file-duplicity'
+
+        # has a unique sent_hash
+        if f_hash not in data.keys():
+
+            # TODO LOGGING: debug
+            print(f'{self.current_process} {f_hash} [{stage}] UNQ {f_name}')
+            return True
+
+        # file is a duplicate
+        else:
+
+            # TODO LOGGING: debug
+            print(f'{self.current_process} {f_hash} [{stage}] DUP {f_name}')
+
+            # getting parent file_name
+            original = data[f_hash]
+
+            # updating dropped data report
+            self.dropped_data_report = self.dropped_data_report.append({
+                'target': target,
+                'id': f_name,
+                'process': self.current_process,
+                'stage': stage,
+                'reason': 'duplicate',
+                'data': {'parent': original}
+            }, ignore_index=True)
+
+            return False
 
 
 class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger):
@@ -228,11 +291,12 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
             'data'])
 
         raw = self.loadData(path)
+        processed = self.checkFiles(raw)
         process_HTML = False
 
         # templates
         if template == 'indeed_samples':
-            processed = self.indeedSamplesTemplateExtract(raw)
+            processed = self.indeedSamplesTemplateExtract(processed)
             process_HTML = True
 
         # html
@@ -311,6 +375,24 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
         raw = raw.to_dict()
 
         return raw
+
+    def checkFiles(self, text_dict):
+
+        # --- initializing ---------------------------------------------------
+        self.current_process = 'checkFiles'
+
+        map_file_names = dict()  # map_file_names[file_hash] = file_name
+        map_file_texts = dict()  # map_file_texts[file_name] = file_text
+
+        # --- processing -----------------------------------------------------
+        for file_name, file_text in text_dict.items():
+            file_hash = hashlib.md5(file_text.encode()).hexdigest()
+            register = self.check_file(map_file_names, file_name, file_hash, file_text, 'map_file_texts')
+            if register:
+                map_file_names[file_hash] = file_name
+                map_file_texts[file_name] = file_text
+
+        return map_file_texts
 
     def standardPreprocessing_HTML_replacements(self, text_dict):
         processed_html = dict()
@@ -611,7 +693,7 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
         # previous data auto selection deciding what version of the sentences to process
         if strip_after == 'lowerring':
             previous_data = previous_res['data_sentences_lowered']
-            previous_data = previous_data[previous_data['role'] != 'child']  # dropping children (duplicates)
+            previous_data = previous_data[pd.isnull(previous_data['parent'])]  # dropping children (duplicates)
             previous_data = previous_data['sentence_lowered']
 
         elif strip_after == 'splitting':
@@ -750,7 +832,6 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
         fd_flags.sort_values(['total'], ascending=False, inplace=True)
 
         # TODO LOGGING: info
-        dup_stripped_hash.sort_values(['stripped_hash', 'role'], ascending=[False, False], inplace=True)
         print('-' * 79)
         print('frequency distribution of flags')
         print(fd_flags)
