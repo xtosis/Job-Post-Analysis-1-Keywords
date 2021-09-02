@@ -117,6 +117,43 @@ class Preprocessing:
 
         return cleaned
 
+    def check_duplicity(self, data, name, sent_hash, sent):
+        stage = 'checking-duplicity'
+        original = None
+
+        # filtering for duplicate sent_hashes
+        fil = copy.deepcopy(data.query(f'{column}_hash == "{sent_hash}"'))
+
+        # has a unique sent_hash
+        if len(fil) == 0:
+
+            # TODO LOGGING: debug
+            print(f'{self.current_process} {sent_hash} [{stage}] UNQ: {sent}')
+
+        # has a duplicate sent_hash
+        else:
+
+            # TODO LOGGING: debug
+            print(f'{self.current_process} {sent_hash} [{stage}] DUP: {sent}')
+
+            # getting parent sent_hash
+            original = fil.index.values[0]
+
+            # TODO LOGGING: debug
+            print(f'{self.current_process} {sent_hash} [{stage}] parent: {original}')
+
+            # updating dropped data report --------------------------------------
+            self.dropped_data_report = self.dropped_data_report.append({
+                'target': f'data_sentences_{name}',
+                'id': sentence_hash,
+                'process': self.current_process,
+                'stage': stage,
+                'reason': 'duplicate',
+                'data': {'parent': original, f'sentence_{name}': f'|{sent}|'},
+            }, ignore_index=True)
+
+        return original
+
 
 class PreprocessingChecks:
 
@@ -501,10 +538,7 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
         self.current_process = 'lowerSentencesThenAnalyze'
 
         # will contain lowered sentences and their subsequent lowered hashes
-        data_sentences_lowered = pd.DataFrame(columns=['lowered_hash', 'role', 'sentence_lowered'])  # index: unlowered sentence hash
-
-        # will contain sentences with duplicate lowered hashes
-        dup_lowered_hash = pd.DataFrame(columns=['lowered_hash', 'role', 'sentence'])  # index: unlowered sentence hash
+        data_sentences_lowered = pd.DataFrame(columns=['lowered_hash', 'parent', 'sentence_lowered'])  # index: unlowered sentence hash
 
         # --- processing -----------------------------------------------------
         previous_data = previous_res['data_sentences']['sentence']
@@ -542,70 +576,14 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
             # --- lowering ---------------------------------------------------
             sentence_lowered = sentence.lower()
             lowered_hash = hashlib.md5(sentence_lowered.encode()).hexdigest()
-
-            # --- checking duplicity -----------------------------------------
-            stage = 'checking-duplicity'
-
-            # initializing role
-            role = None  # None, 'parent' or 'child'
-
-            # filtering for duplicate lowered hashes
-            fil = copy.deepcopy(data_sentences_lowered.query(f'lowered_hash == "{lowered_hash}"'))
-
-            # unique lowered_hash
-            if len(fil) == 0:
-
-                # TODO LOGGING: debug
-                print(f'{self.current_process} {sentence_hash} [{stage}] UNQ: {sentence_lowered}')
-
-            # has a lowered hash duplicate
-            else:
-
-                # TODO LOGGING: debug
-                print(f'{self.current_process} {sentence_hash} [{stage}] DUP: {sentence_lowered}')
-
-                # registering the child
-                role = 'child'
-                row = pd.Series({'lowered_hash': lowered_hash, 'role': role, 'sentence': sentence},
-                                name=sentence_hash)
-                dup_lowered_hash = dup_lowered_hash.append(row)
-
-                # getting unlowered sentence hash of the first occurance...
-                # which will be treated as 'parent' of subsequent duplicates
-                original = fil.index.values[0]
-
-                # TODO LOGGING: debug
-                print(f'{self.current_process} {sentence_hash} [{stage}] parent: {original}')
-
-                # updating dropped data report --------------------------------------
-                self.dropped_data_report = self.dropped_data_report.append({
-                    'target': 'data_sentences_lowered',
-                    'id': sentence_hash,
-                    'process': self.current_process,
-                    'stage': stage,
-                    'reason': 'duplicate',
-                    'data': {'parent': original, 'sentence_lowered': f'|{sentence_lowered}|'},
-                }, ignore_index=True)
-
-                # registering parent if not already registered
-                if fil.loc[original, 'role'] != 'parent':
-                    data_sentences_lowered.loc[original, 'role'] = 'parent'
-                    row = pd.Series({'lowered_hash': lowered_hash, 'role': 'parent',
-                                     'sentence': previous_data[original]},
-                                    name=original)
-                    dup_lowered_hash = dup_lowered_hash.append(row)
+            original = self.check_duplicity(data_sentences_lowered, 'lowered', lowered_hash, sentence_lowered)
 
             # appending
-            row = pd.Series({'lowered_hash': lowered_hash, 'role': role, 'sentence_lowered': sentence_lowered},
+            row = pd.Series({'lowered_hash': lowered_hash,
+                             'parent': original,
+                             'sentence_lowered': sentence_lowered},
                             name=sentence_hash)
             data_sentences_lowered = data_sentences_lowered.append(row)
-
-        # TODO LOGGING: info
-        dup_lowered_hash.sort_values(['lowered_hash', 'role'], ascending=[False, False], inplace=True)
-        print('-' * 79)
-        print('dup_lowered_hash')
-        print(dup_lowered_hash)
-        # TODO LOGGING: info
 
         previous_res['data_sentences_lowered'] = data_sentences_lowered
 
@@ -618,10 +596,7 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
         self.current_process = 'stripSentencesThenAnalyze'
 
         # will contain unique stripped sentences and their subsequent stripped hashes
-        data_sentences_stripped = pd.DataFrame(columns=['stripped_hash', 'role', 'flag_start', 'flag_end', 'sentence_stripped'])  # index: unstripped sentence hash
-
-        # will contain sentences with duplicate stripped hashes
-        dup_stripped_hash = pd.DataFrame(columns=['stripped_hash', 'role', 'sentence'])  # index: unstripped sentence hash
+        data_sentences_stripped = pd.DataFrame(columns=['stripped_hash', 'parent', 'flag_start', 'flag_end', 'sentence_stripped'])  # index: unstripped sentence hash
 
         # --- making sure inputs to the function are valid -------------------
 
@@ -751,60 +726,11 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
                 continue
 
             # --- checking duplicity and appending -------------------
-            stage = 'checking-duplicity'
-
-            # initializing role
-            role = None  # None, 'parent' or 'child'
-
-            # filtering for duplicate stripped hashes
-            fil = copy.deepcopy(data_sentences_stripped.query(f'stripped_hash == "{stripped_hash}"'))
-
-            # unique stripped_hash
-            if len(fil) == 0:
-
-                # TODO LOGGING: debug
-                print(f'{self.current_process} {sentence_hash} [{stage}] UNQ: {sentence_stripped}')
-
-            # has a stripped_hash duplicate
-            else:
-
-                # TODO LOGGING: debug
-                print(f'{self.current_process} {sentence_hash} [{stage}] DUP: {sentence_stripped}')
-
-                # registering the child
-                role = 'child'
-                row = pd.Series({'stripped_hash': stripped_hash, 'role': role, 'sentence': sentence},
-                                name=sentence_hash)
-                dup_stripped_hash = dup_stripped_hash.append(row)
-
-                # getting unstripped sentence hash of the first occurance...
-                # which will be treated as 'parent' of subsequent duplicates
-                original = fil.index.values[0]
-
-                # TODO LOGGING: debug
-                print(f'{self.current_process} {sentence_hash} [{stage}] parent: {original}')
-
-                # updating dropped data report
-                self.dropped_data_report = self.dropped_data_report.append({
-                    'target': 'data_sentences_stripped',
-                    'id': sentence_hash,
-                    'process': self.current_process,
-                    'stage': stage,
-                    'reason': 'duplicate',
-                    'data': {'parent': original, 'sentence_stripped': f'|{sentence_stripped}|'},
-                }, ignore_index=True)
-
-                # registering parent if not already registered
-                if fil.loc[original, 'role'] != 'parent':
-                    data_sentences_stripped.loc[original, 'role'] = 'parent'
-                    row = pd.Series({'stripped_hash': stripped_hash, 'role': 'parent',
-                                     'sentence': previous_data[original]},
-                                    name=original)
-                    dup_stripped_hash = dup_stripped_hash.append(row)
+            original = self.check_duplicity(data_sentences_stripped, 'stripped', stripped_hash, sentence_stripped)
 
             # appending
             row = pd.Series({'stripped_hash': stripped_hash,
-                             'role': role,
+                             'parent': original,
                              'flag_start': flag_start,
                              'flag_end': flag_end,
                              'sentence_stripped': sentence_stripped},
@@ -825,9 +751,6 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
 
         # TODO LOGGING: info
         dup_stripped_hash.sort_values(['stripped_hash', 'role'], ascending=[False, False], inplace=True)
-        print('-' * 79)
-        print('dup_stripped_hash')
-        print(dup_stripped_hash)
         print('-' * 79)
         print('frequency distribution of flags')
         print(fd_flags)
