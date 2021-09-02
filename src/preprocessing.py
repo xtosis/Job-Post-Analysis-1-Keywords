@@ -117,43 +117,6 @@ class Preprocessing:
 
         return cleaned
 
-    def check_duplicity(self, data, name, sent_hash, sent):
-        stage = 'checking-duplicity'
-        original = None
-
-        # filtering for duplicate sent_hashes
-        fil = copy.deepcopy(data.query(f'{column}_hash == "{sent_hash}"'))
-
-        # has a unique sent_hash
-        if len(fil) == 0:
-
-            # TODO LOGGING: debug
-            print(f'{self.current_process} {sent_hash} [{stage}] UNQ: {sent}')
-
-        # has a duplicate sent_hash
-        else:
-
-            # TODO LOGGING: debug
-            print(f'{self.current_process} {sent_hash} [{stage}] DUP: {sent}')
-
-            # getting parent sent_hash
-            original = fil.index.values[0]
-
-            # TODO LOGGING: debug
-            print(f'{self.current_process} {sent_hash} [{stage}] parent: {original}')
-
-            # updating dropped data report --------------------------------------
-            self.dropped_data_report = self.dropped_data_report.append({
-                'target': f'data_sentences_{name}',
-                'id': sentence_hash,
-                'process': self.current_process,
-                'stage': stage,
-                'reason': 'duplicate',
-                'data': {'parent': original, f'sentence_{name}': f'|{sent}|'},
-            }, ignore_index=True)
-
-        return original
-
 
 class PreprocessingChecks:
 
@@ -203,6 +166,43 @@ class PreprocessingChecks:
             self.messages = self.messages.append(msg, ignore_index=True)
 
         return res
+
+    def check_duplicity(self, data, name, sent_hash, sent):
+        stage = 'checking-duplicity'
+        original = None
+
+        # filtering for duplicate sent_hashes
+        fil = copy.deepcopy(data.query(f'{column}_hash == "{sent_hash}"'))
+
+        # has a unique sent_hash
+        if len(fil) == 0:
+
+            # TODO LOGGING: debug
+            print(f'{self.current_process} {sent_hash} [{stage}] UNQ: {sent}')
+
+        # has a duplicate sent_hash
+        else:
+
+            # TODO LOGGING: debug
+            print(f'{self.current_process} {sent_hash} [{stage}] DUP: {sent}')
+
+            # getting parent sent_hash
+            original = fil.index.values[0]
+
+            # TODO LOGGING: debug
+            print(f'{self.current_process} {sent_hash} [{stage}] parent: {original}')
+
+            # updating dropped data report --------------------------------------
+            self.dropped_data_report = self.dropped_data_report.append({
+                'target': f'data_sentences_{name}',
+                'id': sentence_hash,
+                'process': self.current_process,
+                'stage': stage,
+                'reason': 'duplicate',
+                'data': {'parent': original, f'sentence_{name}': f'|{sent}|'},
+            }, ignore_index=True)
+
+        return original
 
 
 class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger):
