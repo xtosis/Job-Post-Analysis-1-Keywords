@@ -182,6 +182,14 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
             'message',  # --------- e.g. 'zero length'
             'data'])  # ----------- e.g. {'before': '|raw sentence|', 'after': '|processed sentence|'}
 
+        self.dropped_data_report = pd.DataFrame(columns=[
+            'target',  # name of the target table that it was supposed to be registered in
+            'id',  # the current id or would be id of the record
+            'process',
+            'stage',
+            'reason',
+            'data'])
+
         raw = self.loadData(path)
         process_HTML = False
 
@@ -245,6 +253,9 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
         print('-' * 79)
         print('messages')
         print(self.messages)
+        print('-' * 79)
+        print('dropped data report')
+        print(self.dropped_data_report)
         # TODO LOGGING: info
 
     def loadData(self, path):
@@ -309,7 +320,6 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
 
             # --- checking file length ---------------------------------------
             stage = 'before-processing'
-            file_hash = hashlib.md5(text.lower().encode()).hexdigest()
             file_length_before_processing = self.check_sentence_length(
                 text,
                 None,
@@ -325,10 +335,22 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
                 # TODO LOGGING: error
                 error_text = 'ABORTED processing file: bad length'
                 print(f'{self.current_process} {name} [{stage}] {error_text}')
+
+                # updating dropped data report
+                self.dropped_data_report = self.dropped_data_report.append({
+                    'target': 'map_text_hashes',
+                    'id': name,
+                    'process': self.current_process,
+                    'stage': stage,
+                    'reason': 'bad-length',
+                    'data': {'file-text': f'|{text}|'},
+                }, ignore_index=True)
+
                 continue
 
             # --- checking file duplicity ------------------------------------
             stage = 'file-duplicity'
+            file_hash = hashlib.md5(text.lower().encode()).hexdigest()
 
             # file is a duplicate
             if file_hash in map_text_hashes.keys():
@@ -343,6 +365,17 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
 
                 # append duplicate filename
                 dup_text_hash[org].append(name)
+
+                # updating dropped data report
+                self.dropped_data_report = self.dropped_data_report.append({
+                    'target': 'map_text_hashes',
+                    'id': name,
+                    'process': self.current_process,
+                    'stage': stage,
+                    'reason': 'duplicate',
+                    'data': {'parent': org, 'file_hash': file_hash}
+                }, ignore_index=True)
+
                 continue
 
             # TODO LOGGING: debug
@@ -383,6 +416,19 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
                     # TODO LOGGING: error
                     error_text = 'ABORTED registering sentence: bad length'
                     print(f'{self.current_process} {sentence_hash} [{stage}] {error_text}')
+
+                    # updating dropped data report
+                    dropped_data_report_data = {'sentence': f'|{sentence}|'}
+                    dropped_data_report_data.update(other_data)
+                    self.dropped_data_report = self.dropped_data_report.append({
+                        'target': 'map_sentence_lines',
+                        'id': sentence_hash,
+                        'process': self.current_process,
+                        'stage': stage,
+                        'reason': 'bad-length',
+                        'data': dropped_data_report_data,
+                    }, ignore_index=True)
+
                     continue
 
                 # --- registering line number --------------------------------
@@ -410,6 +456,17 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
                     else:
                         val = dup_sentences.loc[sentence_hash, 'count'] + 1
                         dup_sentences.loc[sentence_hash, 'count'] = val
+
+                    # updating dropped data report
+                    self.dropped_data_report = self.dropped_data_report.append({
+                        'target': 'data_sentences',
+                        'id': sentence_hash,
+                        'process': self.current_process,
+                        'stage': stage,
+                        'reason': 'duplicate',
+                        'data': {'sentence': f'|{sentence}|'}
+                    }, ignore_index=True)
+
                     continue
 
                 # --- registering unique sentence ----------------------------
@@ -469,6 +526,17 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
                 # TODO LOGGING: error
                 error_text = 'ABORTED processing sentence: bad length'
                 print(f'{self.current_process} {sentence_hash} [{stage}] {error_text}')
+
+                # updating dropped data report
+                self.dropped_data_report = self.dropped_data_report.append({
+                    'target': 'data_sentences_lowered',
+                    'id': sentence_hash,
+                    'process': self.current_process,
+                    'stage': stage,
+                    'reason': 'bad-length',
+                    'data': {'sentence': f'|{sentence}|'},
+                }, ignore_index=True)
+
                 continue
 
             # --- lowering ---------------------------------------------------
@@ -508,6 +576,16 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
 
                 # TODO LOGGING: debug
                 print(f'{self.current_process} {sentence_hash} [{stage}] parent: {original}')
+
+                # updating dropped data report --------------------------------------
+                self.dropped_data_report = self.dropped_data_report.append({
+                    'target': 'data_sentences_lowered',
+                    'id': sentence_hash,
+                    'process': self.current_process,
+                    'stage': stage,
+                    'reason': 'duplicate',
+                    'data': {'parent': original, 'sentence_lowered': f'|{sentence_lowered}|'},
+                }, ignore_index=True)
 
                 # registering parent if not already registered
                 if fil.loc[original, 'role'] != 'parent':
@@ -587,6 +665,17 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
                 # TODO LOGGING: error
                 error_text = 'ABORTED processing sentence: bad length'
                 print(f'{self.current_process} {sentence_hash} [{stage}] {error_text}')
+
+                # updating dropped data report
+                self.dropped_data_report = self.dropped_data_report.append({
+                    'target': 'data_sentences_stripped',
+                    'id': sentence_hash,
+                    'process': self.current_process,
+                    'stage': stage,
+                    'reason': 'bad-length',
+                    'data': {'sentence': f'|{sentence}|'},
+                }, ignore_index=True)
+
                 continue
 
             # --- flagging -----------------------------------------------
@@ -648,6 +737,17 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
                 # TODO LOGGING: error
                 error_text = 'ABORTED appending sentence: bad length'
                 print(f'{self.current_process} {sentence_hash} [{stage}] {error_text}')
+
+                # updating dropped data report
+                self.dropped_data_report = self.dropped_data_report.append({
+                    'target': 'data_sentences_stripped',
+                    'id': sentence_hash,
+                    'process': self.current_process,
+                    'stage': stage,
+                    'reason': 'bad-length',
+                    'data': {'sentence_stripped': f'|{sentence_stripped}|'},
+                }, ignore_index=True)
+
                 continue
 
             # --- checking duplicity and appending -------------------
@@ -683,6 +783,16 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
 
                 # TODO LOGGING: debug
                 print(f'{self.current_process} {sentence_hash} [{stage}] parent: {original}')
+
+                # updating dropped data report
+                self.dropped_data_report = self.dropped_data_report.append({
+                    'target': 'data_sentences_stripped',
+                    'id': sentence_hash,
+                    'process': self.current_process,
+                    'stage': stage,
+                    'reason': 'duplicate',
+                    'data': {'parent': original, 'sentence_stripped': f'|{sentence_stripped}|'},
+                }, ignore_index=True)
 
                 # registering parent if not already registered
                 if fil.loc[original, 'role'] != 'parent':
