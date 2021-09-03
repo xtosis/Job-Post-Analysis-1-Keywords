@@ -24,8 +24,9 @@ class Preprocessing:
             print(f'suffix mismatch: {suffix} != {text[-len(suffix):]}')  # TODO LOGGING: warning
         return text
 
-    def show_start_and_end(self, stage, file_name, text, lim):
-        print(stage, file_name, text[:lim], '...', text[-lim:])  # TODO LOGGING: debug or info
+    def show_start_and_end(self, stage, f_hash, f_name, f_text, lim):
+        prefix = f'{self.current_process} {f_hash} [{stage}] {f_name}'
+        print(prefix, f_text[:lim], '...', f_text[-lim:])  # TODO LOGGING: debug or info
 
     def HTML_tags_get_list(self, text_dict):
         tags = pd.DataFrame(columns=['ends', 'forms'])
@@ -360,14 +361,21 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
         # TODO LOGGING: info
 
     def loadData(self, path):
+
+        # --- initializations ------------------------------------------------
+        self.current_process = 'loadData'
         raw = dict()
-        for name in os.listdir(path):
-            file_path = path + f'/{name}'
+
+        # --- processing -----------------------------------------------------
+        for file_name in os.listdir(path):
+            file_path = path + f'/{file_name}'
             if os.path.isfile(file_path):
                 with open(file_path, 'r', encoding='utf-8') as f:
-                    name = file_path.replace(PATH_DATA, '')
-                    raw[name] = f.read()
-                    self.show_start_and_end('loaded', name, raw[name], 90)
+                    file_text = f.read()
+                    file_hash = hashlib.md5(file_text.encode()).hexdigest()
+                    file_name = file_path.replace(PATH_DATA, '')
+                    raw[file_name] = file_text
+                    self.show_start_and_end('loaded', file_hash, file_name, file_text, 90)
 
         # -- sorting file names
         raw = pd.Series(raw, name='raw')
@@ -842,27 +850,38 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
         return previous_res
 
     def indeedSamplesTemplateExtract(self, text_dict):
-        processed_template = dict()
 
-        for name, text in text_dict.items():
+        # --- initializing ---------------------------------------------------
+        self.current_process = 'indeedSamplesTemplateExtract'
+
+        map_file_names = dict()  # map_file_names[file_hash] = file_name
+        map_file_texts = dict()  # map_file_texts[file_name] = file_text
+
+        # --- processing -----------------------------------------------------
+        for file_name, file_text in text_dict.items():
 
             # sample files format: prefix and suffix
-            text = self.remove_prefix(text, "['")
-            text = self.remove_suffix(text, "']")
+            file_text = self.remove_prefix(file_text, "['")
+            file_text = self.remove_suffix(file_text, "']")
 
             # indeed posts format: prefix and suffix
-            text = self.remove_prefix(text, '<div id="jobDescriptionText" class="jobsearch-jobDescriptionText">')
-            text = self.remove_suffix(text, '</div>')
+            file_text = self.remove_prefix(file_text, '<div id="jobDescriptionText" class="jobsearch-jobDescriptionText">')
+            file_text = self.remove_suffix(file_text, '</div>')
 
             # indeed posts format: some posts are still enclosed in div containers
-            while text.find('<div>') == 0:
-                if text[-6:] == '</div>':
-                    text = self.remove_prefix(text, '<div>', ignore=True)
-                    text = self.remove_suffix(text, '</div>', ignore=True)
+            while file_text.find('<div>') == 0:
+                if file_text[-6:] == '</div>':
+                    file_text = self.remove_prefix(file_text, '<div>', ignore=True)
+                    file_text = self.remove_suffix(file_text, '</div>', ignore=True)
                 else:
                     break
 
-            self.show_start_and_end('indeed-samples-template-extract', name, text, 90)
-            processed_template[name] = text
+            # --- checking file length ---------------------------------------
+            file_hash = hashlib.md5(file_text.encode()).hexdigest()
+            self.show_start_and_end('text-extracted', file_hash, file_name, file_text, 90)
+            register = self.check_file(map_file_names, file_name, file_hash, file_text, 'map_file_texts')
+            if register:
+                map_file_names[file_hash] = file_name
+                map_file_texts[file_name] = file_text
 
-        return processed_template
+        return map_file_texts
