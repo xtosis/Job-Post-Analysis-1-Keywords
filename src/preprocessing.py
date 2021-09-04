@@ -403,18 +403,32 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
         return map_file_texts
 
     def standardPreprocessing_HTML_replacements(self, text_dict):
-        processed_html = dict()
+
+        # --- initializing ---------------------------------------------------
+        self.current_process = 'standardPreprocessing_HTML_tags'
+
+        map_file_names = dict()  # map_file_names[file_hash] = file_name
+        map_file_texts = dict()  # map_file_texts[file_name] = file_text
 
         replace_dict = {'&amp;': '&',  # putting '&' back
                         '\\n': '\n',  # replacing weird newline artifact: \\n
                         "\\'": "'"}  # replacing \'
 
-        for name, text in text_dict.items():
-            for old, new in replace_dict.items():
-                text = text.replace(old, new)
-            processed_html[name] = text
+        # --- processing -----------------------------------------------------
+        for file_name, file_text in text_dict.items():
 
-        return processed_html
+            # replacing characters
+            for old, new in replace_dict.items():
+                file_text = file_text.replace(old, new)
+
+            # checking file
+            file_hash = hashlib.md5(file_text.encode()).hexdigest()
+            register = self.check_file(map_file_names, file_name, file_hash, file_text, 'map_file_texts')
+            if register:
+                map_file_names[file_hash] = file_name
+                map_file_texts[file_name] = file_text
+
+        return map_file_texts
 
     def standardPreprocessing_HTML_tags(self, text_dict):
 
