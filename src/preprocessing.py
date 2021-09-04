@@ -103,20 +103,28 @@ class Preprocessing:
         return removed_tags
 
     def final_clean_up(self, text_dict):
-        cleaned = dict()
 
-        for name, text in text_dict.items():
+        # --- initializing ---------------------------------------------------
+        self.current_process = 'final_clean_up'
 
-            size_start = len(text)
+        map_file_names = dict()  # map_file_names[file_hash] = file_name
+        map_file_texts = dict()  # map_file_texts[file_name] = file_text
 
+        # --- processing -----------------------------------------------------
+        for file_name, file_text in text_dict.items():
+
+            # cleaning file
             for char in ('\n', ' '):
-                text = self.remove_doubled(text, char)
-            cleaned[name] = text
+                file_text = self.remove_doubled(file_text, char)
 
-            size_end = len(text)
-            print('final clean up', name, size_start, 'to', size_end)  # TODO LOGGING: debug
+            # checking file
+            file_hash = hashlib.md5(file_text.encode()).hexdigest()
+            register = self.check_file(map_file_names, file_name, file_hash, file_text, 'map_file_texts')
+            if register:
+                map_file_names[file_hash] = file_name
+                map_file_texts[file_name] = file_text
 
-        return cleaned
+        return map_file_texts
 
 
 class PreprocessingChecks:
