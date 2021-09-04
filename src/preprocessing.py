@@ -28,11 +28,17 @@ class Preprocessing:
         prefix = f'{self.current_process} {f_hash} [{stage}] {f_name}'
         print(prefix, f_text[:lim], '...', f_text[-lim:])  # TODO LOGGING: debug or info
 
-    def HTML_tags_get_list(self, previous_map_file_texts):
+    def remove_doubled(self, text, char):
+        remove = f'{char}{char}'
+        while text.find(remove) > -1:
+            text = text.replace(remove, char)
+        return text
+
+    def HTML_tags_get_list(self, previous_map_files):
         tags = pd.DataFrame(columns=['ends', 'forms'])
 
-        for name, text in previous_map_file_texts.items():
-            for tag in re.findall('<.*?>', text):
+        for _, file_text in previous_map_files['texts'].items():
+            for tag in re.findall('<.*?>', file_text):
                 if tag[1] != '/':
                     form = copy.deepcopy(tag)
                     if tag.find(' ') > -1:
@@ -51,58 +57,116 @@ class Preprocessing:
 
         return tags
 
-    def remove_doubled(self, text, char):
-        remove = f'{char}{char}'
-        while text.find(remove) > -1:
-            text = text.replace(remove, char)
-        return text
+    def HTML_replacements(self, previous_map_files):
 
-    def HTML_tags_replace_empty(self, previous_map_file_texts, tags):
+        # --- initializing ---------------------------------------------------
+        self.current_process = 'standardPreprocessing_HTML_tags'
+
+        map_file_names = dict()  # map_file_names[file_hash] = file_name
+        map_file_texts = dict()  # map_file_texts[file_hash] = file_text
+
+        replace_dict = {'&amp;': '&',  # putting '&' back
+                        '\\n': '\n',  # replacing weird newline artifact: \\n
+                        "\\'": "'"}  # replacing \'
+
+        # --- processing -----------------------------------------------------
+        for previous_file_hash, file_text in previous_map_files['texts'].items():
+
+            # replacing characters
+            for old, new in replace_dict.items():
+                file_text = file_text.replace(old, new)
+
+            # checking file
+            file_name = previous_map_files['names'][previous_file_hash]
+            file_hash = hashlib.md5(file_text.encode()).hexdigest()
+            register = self.check_file(map_file_names, file_name, file_hash, file_text, 'map_file_texts')
+            if register:
+                map_file_names[file_hash] = file_name
+                map_file_texts[file_hash] = file_text
+
+        current_map_files = {'texts': map_file_texts, 'names': map_file_names}
+
+        return current_map_files
+
+    def HTML_tags_replace_empty(self, previous_map_files, tags):
+
+        # --- initializing ---------------------------------------------------
+        self.current_process = 'final_clean_up'
+
+        map_file_names = dict()  # map_file_names[file_hash] = file_name
+        map_file_texts = dict()  # map_file_texts[file_hash] = file_text
+
         tags_with_endings = copy.deepcopy(tags.query('ends == True'))
-        replaced_tags = dict()
 
-        for name, text in previous_map_file_texts.items():
+        # --- processing -----------------------------------------------------
+        for previous_file_hash, file_text in previous_map_files['texts'].items():
 
-            size_start = len(text)
+            size_start = len(file_text)
 
+            # replacing double newlines and double spaces
             for character in ('\n', ' '):
-                text = self.remove_doubled(text, character)
+                file_text = self.remove_doubled(file_text, character)
+
+            # replacing empty html tags
             for tag, forms in tags_with_endings['forms'].items():
                 tag_end = tag.replace('<', '</')
                 for tag_start in forms:
                     for character in ('\n', ' ', ''):
                         remove = tag_start + character + tag_end
-                        text = text.replace(remove, '\n')
-                        text = self.remove_doubled(text, '\n')
-            text = text.replace('<br>', '\n')
-            text = self.remove_doubled(text, '\n')
-            replaced_tags[name] = text
+                        file_text = file_text.replace(remove, '\n')
+                        file_text = self.remove_doubled(file_text, '\n')
 
-            size_end = len(text)
-            print('replaced html tags for', name, size_start, 'to', size_end)  # TODO LOGGING: debug
+            # replacing <br> tags
+            file_text = file_text.replace('<br>', '\n')
 
-        return replaced_tags
+            # replacing double newlines again
+            file_text = self.remove_doubled(file_text, '\n')
 
-    def HTML_tags_remove(self, previous_map_file_texts, tags):
-        removed_tags = dict()
+            # checking file
+            file_name = previous_map_files['names'][previous_file_hash]
+            file_hash = hashlib.md5(file_text.encode()).hexdigest()
+            register = self.check_file(map_file_names, file_name, file_hash, file_text, 'map_file_texts')
+            if register:
+                map_file_names[file_hash] = file_name
+                map_file_texts[file_hash] = file_text
 
-        for name, text in previous_map_file_texts.items():
+        current_map_files = {'texts': map_file_texts, 'names': map_file_names}
 
-            size_start = len(text)
+        return current_map_files
 
+    def HTML_tags_remove(self, previous_map_files, tags):
+
+        # --- initializing ---------------------------------------------------
+        self.current_process = 'HTML_tags_remove'
+
+        map_file_names = dict()  # map_file_names[file_hash] = file_name
+        map_file_texts = dict()  # map_file_texts[file_hash] = file_text
+
+        # --- processing -----------------------------------------------------
+        for previous_file_hash, file_text in previous_map_files['texts'].items():
+
+            size_start = len(file_text)
+
+            # removing html tags
             for tag, forms in tags['forms'].items():
                 for tag_start in forms:
-                    text = text.replace(tag_start, '')
+                    file_text = file_text.replace(tag_start, '')
                 tag_end = tag.replace('<', '</')
-                text = text.replace(tag_end, '')
-            removed_tags[name] = text
+                file_text = file_text.replace(tag_end, '')
 
-            size_end = len(text)
-            print('removed html tags for', name, size_start, 'to', size_end)  # TODO LOGGING: debug
+            # checking file
+            file_name = previous_map_files['names'][previous_file_hash]
+            file_hash = hashlib.md5(file_text.encode()).hexdigest()
+            register = self.check_file(map_file_names, file_name, file_hash, file_text, 'map_file_texts')
+            if register:
+                map_file_names[file_hash] = file_name
+                map_file_texts[file_hash] = file_text
 
-        return removed_tags
+            current_map_files = {'texts': map_file_texts, 'names': map_file_names}
 
-    def final_clean_up(self, previous_map_file_texts):
+        return current_map_files
+
+    def final_clean_up(self, previous_map_files):
 
         # --- initializing ---------------------------------------------------
         self.current_process = 'final_clean_up'
@@ -111,20 +175,23 @@ class Preprocessing:
         map_file_texts = dict()  # map_file_texts[file_hash] = file_text
 
         # --- processing -----------------------------------------------------
-        for file_name, file_text in previous_map_file_texts.items():
+        for previous_file_hash, file_text in previous_map_files['texts'].items():
 
             # cleaning file
             for char in ('\n', ' '):
                 file_text = self.remove_doubled(file_text, char)
 
             # checking file
+            file_name = previous_map_files['names'][previous_file_hash]
             file_hash = hashlib.md5(file_text.encode()).hexdigest()
             register = self.check_file(map_file_names, file_name, file_hash, file_text, 'map_file_texts')
             if register:
                 map_file_names[file_hash] = file_name
                 map_file_texts[file_hash] = file_text
 
-        return map_file_texts, map_file_names
+        current_map_files = {'texts': map_file_texts, 'names': map_file_names}
+
+        return current_map_files
 
 
 class PreprocessingChecks:
@@ -303,24 +370,26 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
 
         # --- processing at file level ---------------------------------------
 
-        map_file_texts = self.checkFiles(raw)
+        map_files = self.checkFiles(raw)
         process_HTML = False
 
         # templates
         if template == 'indeed_samples':
-            map_file_texts = self.indeedSamplesTemplateExtract(map_file_texts)
+            map_files = self.indeedSamplesTemplateExtract(map_files)
             process_HTML = True
 
         # html
         if process_HTML:
-            map_file_texts = self.standardPreprocessing_HTML_replacements(map_file_texts)
-            map_file_texts = self.standardPreprocessing_HTML_tags(map_file_texts)
+            map_files = self.HTML_replacements(map_files)
+            tags = self.HTML_tags_get_list(map_files)
+            map_files = self.HTML_tags_replace_empty(map_files, tags)
+            map_files = self.HTML_tags_remove(map_files, tags)
 
-        map_file_texts, map_file_names = self.final_clean_up(map_file_texts)
+        map_files = self.final_clean_up(map_files)
 
         # --- processing at sentence level -----------------------------------
 
-        processed = self.splitSentencesThenAnalyze(map_file_texts, map_file_names)
+        # processed = self.splitSentencesThenAnalyze(map_file_texts, map_file_names)
         # processed = self.lowerSentencesThenAnalyze(processed)
         # processed = self.stripSentencesThenAnalyze(processed, to_strip, strip_after, auto_strip)
 
@@ -398,7 +467,47 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
 
         return raw
 
-    def checkFiles(self, previous_map_file_texts):
+    def indeedSamplesTemplateExtract(self, previous_map_files):
+
+        # --- initializing ---------------------------------------------------
+        self.current_process = 'indeedSamplesTemplateExtract'
+
+        map_file_names = dict()  # map_file_names[file_hash] = file_name
+        map_file_texts = dict()  # map_file_texts[file_hash] = file_text
+
+        # --- processing -----------------------------------------------------
+        for previous_file_hash, file_text in previous_map_files['texts'].items():
+
+            # sample files format: prefix and suffix
+            file_text = self.remove_prefix(file_text, "['")
+            file_text = self.remove_suffix(file_text, "']")
+
+            # indeed posts format: prefix and suffix
+            file_text = self.remove_prefix(file_text, '<div id="jobDescriptionText" class="jobsearch-jobDescriptionText">')
+            file_text = self.remove_suffix(file_text, '</div>')
+
+            # indeed posts format: some posts are still enclosed in div containers
+            while file_text.find('<div>') == 0:
+                if file_text[-6:] == '</div>':
+                    file_text = self.remove_prefix(file_text, '<div>', ignore=True)
+                    file_text = self.remove_suffix(file_text, '</div>', ignore=True)
+                else:
+                    break
+
+            # --- checking file length ---------------------------------------
+            file_name = previous_map_files['names'][previous_file_hash]
+            file_hash = hashlib.md5(file_text.encode()).hexdigest()
+            self.show_start_and_end('text-extracted', file_hash, file_name, file_text, 90)
+            register = self.check_file(map_file_names, file_name, file_hash, file_text, 'map_file_texts')
+            if register:
+                map_file_names[file_hash] = file_name
+                map_file_texts[file_hash] = file_text
+
+        current_map_files = {'texts': map_file_texts, 'names': map_file_names}
+
+        return current_map_files
+
+    def checkFiles(self, raw):
 
         # --- initializing ---------------------------------------------------
         self.current_process = 'checkFiles'
@@ -407,65 +516,16 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
         map_file_texts = dict()  # map_file_texts[file_hash] = file_text
 
         # --- processing -----------------------------------------------------
-        for file_name, file_text in previous_map_file_texts.items():
+        for file_name, file_text in raw.items():
             file_hash = hashlib.md5(file_text.encode()).hexdigest()
             register = self.check_file(map_file_names, file_name, file_hash, file_text, 'map_file_texts')
             if register:
                 map_file_names[file_hash] = file_name
                 map_file_texts[file_hash] = file_text
 
-        return map_file_texts
+        current_map_files = {'texts': map_file_texts, 'names': map_file_names}
 
-    def standardPreprocessing_HTML_replacements(self, previous_map_file_texts):
-
-        # --- initializing ---------------------------------------------------
-        self.current_process = 'standardPreprocessing_HTML_tags'
-
-        map_file_names = dict()  # map_file_names[file_hash] = file_name
-        map_file_texts = dict()  # map_file_texts[file_hash] = file_text
-
-        replace_dict = {'&amp;': '&',  # putting '&' back
-                        '\\n': '\n',  # replacing weird newline artifact: \\n
-                        "\\'": "'"}  # replacing \'
-
-        # --- processing -----------------------------------------------------
-        for file_name, file_text in previous_map_file_texts.items():
-
-            # replacing characters
-            for old, new in replace_dict.items():
-                file_text = file_text.replace(old, new)
-
-            # checking file
-            file_hash = hashlib.md5(file_text.encode()).hexdigest()
-            register = self.check_file(map_file_names, file_name, file_hash, file_text, 'map_file_texts')
-            if register:
-                map_file_names[file_hash] = file_name
-                map_file_texts[file_hash] = file_text
-
-        return map_file_texts
-
-    def standardPreprocessing_HTML_tags(self, previous_map_file_texts):
-
-        # --- initializing ---------------------------------------------------
-        self.current_process = 'standardPreprocessing_HTML_tags'
-
-        map_file_names = dict()  # map_file_names[file_hash] = file_name
-        map_file_texts = dict()  # map_file_texts[file_hash] = file_text
-
-        # --- processing -----------------------------------------------------
-        tags = self.HTML_tags_get_list(previous_map_file_texts)
-        processed_html = self.HTML_tags_replace_empty(previous_map_file_texts, tags)
-        processed_html = self.HTML_tags_remove(processed_html, tags)
-
-        # --- checking files -------------------------------------------------
-        for file_name, file_text in processed_html.items():
-            file_hash = hashlib.md5(file_text.encode()).hexdigest()
-            register = self.check_file(map_file_names, file_name, file_hash, file_text, 'map_file_texts')
-            if register:
-                map_file_names[file_hash] = file_name
-                map_file_texts[file_hash] = file_text
-
-        return map_file_texts
+        return current_map_files
 
     def splitSentencesThenAnalyze(self, map_file_texts, map_file_names):
 
@@ -818,40 +878,3 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
         previous_res['data_sentences_stripped'] = data_sentences_stripped
 
         return previous_res
-
-    def indeedSamplesTemplateExtract(self, previous_map_file_texts):
-
-        # --- initializing ---------------------------------------------------
-        self.current_process = 'indeedSamplesTemplateExtract'
-
-        map_file_names = dict()  # map_file_names[file_hash] = file_name
-        map_file_texts = dict()  # map_file_texts[file_hash] = file_text
-
-        # --- processing -----------------------------------------------------
-        for file_name, file_text in previous_map_file_texts.items():
-
-            # sample files format: prefix and suffix
-            file_text = self.remove_prefix(file_text, "['")
-            file_text = self.remove_suffix(file_text, "']")
-
-            # indeed posts format: prefix and suffix
-            file_text = self.remove_prefix(file_text, '<div id="jobDescriptionText" class="jobsearch-jobDescriptionText">')
-            file_text = self.remove_suffix(file_text, '</div>')
-
-            # indeed posts format: some posts are still enclosed in div containers
-            while file_text.find('<div>') == 0:
-                if file_text[-6:] == '</div>':
-                    file_text = self.remove_prefix(file_text, '<div>', ignore=True)
-                    file_text = self.remove_suffix(file_text, '</div>', ignore=True)
-                else:
-                    break
-
-            # --- checking file length ---------------------------------------
-            file_hash = hashlib.md5(file_text.encode()).hexdigest()
-            self.show_start_and_end('text-extracted', file_hash, file_name, file_text, 90)
-            register = self.check_file(map_file_names, file_name, file_hash, file_text, 'map_file_texts')
-            if register:
-                map_file_names[file_hash] = file_name
-                map_file_texts[file_hash] = file_text
-
-        return map_file_texts
