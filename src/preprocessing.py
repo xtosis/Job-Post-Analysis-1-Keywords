@@ -480,81 +480,9 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
         unq_sentences = pd.DataFrame(columns=['words', 'commas', 'sentence'])  # index: sentence_hash
         dup_sentences = pd.DataFrame(columns=['count', 'sentence'])  # index: sentence_hash
 
-        # text hashes for files
-        map_text_hashes = dict()  # index: file_hash
-
-        # duplicate files
-        dup_text_hash = dict()  # index: file name
-
-        # --- processing each file -------------------------------------------
-
         for name, text in map_file_texts.items():
 
-            # --- checking file length ---------------------------------------
-            stage = 'before-processing'
-            file_length_before_processing = self.check_sentence_length(
-                text,
-                None,
-                msg_stage=stage,
-                msg_level='error',
-                min_len=100,
-                other_data={'file': name}
-            )
-
-            # if file length is not ok
-            if file_length_before_processing != 1:
-
-                # TODO LOGGING: error
-                error_text = 'ABORTED processing file: bad length'
-                print(f'{self.current_process} {name} [{stage}] {error_text}')
-
-                # updating dropped data report
-                self.dropped_data_report = self.dropped_data_report.append({
-                    'target': 'map_text_hashes',
-                    'id': name,
-                    'process': self.current_process,
-                    'stage': stage,
-                    'reason': 'bad-length',
-                    'data': {'file-text': f'|{text}|'},
-                }, ignore_index=True)
-
-                continue
-
-            # --- checking file duplicity ------------------------------------
-            stage = 'file-duplicity'
-            file_hash = hashlib.md5(text.lower().encode()).hexdigest()
-
-            # file is a duplicate
-            if file_hash in map_text_hashes.keys():
-                org = map_text_hashes[file_hash]
-
-                # TODO LOGGING: debug
-                print(f'{self.current_process} {name} [{stage}] DUP: {org}')
-
-                # first occurance: add original file name to keys
-                if org not in dup_text_hash.keys():
-                    dup_text_hash[org] = []
-
-                # append duplicate filename
-                dup_text_hash[org].append(name)
-
-                # updating dropped data report
-                self.dropped_data_report = self.dropped_data_report.append({
-                    'target': 'map_text_hashes',
-                    'id': name,
-                    'process': self.current_process,
-                    'stage': stage,
-                    'reason': 'duplicate',
-                    'data': {'parent': org, 'file_hash': file_hash}
-                }, ignore_index=True)
-
-                continue
-
-            # TODO LOGGING: debug
-            print(f'{self.current_process} {name} [{stage}] UNQ')
-
-            # registering unique file
-            map_text_hashes[file_hash] = name
+            # splitting sentences
             sentences = text.splitlines()
 
             # --- processing each sentence -----------------------------------
@@ -655,9 +583,6 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
         print('-' * 79)
         print('dup_sentences')
         print(dup_sentences)
-        print('-' * 79)
-        print('dup_text_hashes')
-        print(pd.Series(dup_text_hash, name='dup_text_hashes: org vs dups'))
         # TODO LOGGING end: info
 
         res = {'data_sentences': unq_sentences,
