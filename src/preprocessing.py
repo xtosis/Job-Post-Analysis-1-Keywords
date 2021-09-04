@@ -320,7 +320,7 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
 
         # --- processing at sentence level -----------------------------------
 
-        # processed = self.splitSentencesThenAnalyze(processed)
+        processed = self.splitSentencesThenAnalyze(map_file_texts, map_file_names)
         # processed = self.lowerSentencesThenAnalyze(processed)
         # processed = self.stripSentencesThenAnalyze(processed, to_strip, strip_after, auto_strip)
 
@@ -467,7 +467,7 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
 
         return map_file_texts
 
-    def splitSentencesThenAnalyze(self, previous_map_file_texts):
+    def splitSentencesThenAnalyze(self, map_file_texts, map_file_names):
 
         # --- initializing ---------------------------------------------------
 
@@ -488,7 +488,7 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
 
         # --- processing each file -------------------------------------------
 
-        for name, text in previous_map_file_texts.items():
+        for name, text in map_file_texts.items():
 
             # --- checking file length ---------------------------------------
             stage = 'before-processing'
