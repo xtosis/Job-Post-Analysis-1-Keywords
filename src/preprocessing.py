@@ -417,10 +417,27 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
         return processed_html
 
     def standardPreprocessing_HTML_tags(self, text_dict):
+
+        # --- initializing ---------------------------------------------------
+        self.current_process = 'standardPreprocessing_HTML_tags'
+
+        map_file_names = dict()  # map_file_names[file_hash] = file_name
+        map_file_texts = dict()  # map_file_texts[file_name] = file_text
+
+        # --- processing -----------------------------------------------------
         tags = self.HTML_tags_get_list(text_dict)
         processed_html = self.HTML_tags_replace_empty(text_dict, tags)
         processed_html = self.HTML_tags_remove(processed_html, tags)
-        return processed_html
+
+        # --- checking files -------------------------------------------------
+        for file_name, file_text in text_dict.items():
+            file_hash = hashlib.md5(file_text.encode()).hexdigest()
+            register = self.check_file(map_file_names, file_name, file_hash, file_text, 'map_file_texts')
+            if register:
+                map_file_names[file_hash] = file_name
+                map_file_texts[file_name] = file_text
+
+        return map_file_texts
 
     def splitSentencesThenAnalyze(self, text_dict):
 
