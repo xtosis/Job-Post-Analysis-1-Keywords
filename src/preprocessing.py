@@ -389,7 +389,7 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
 
         # --- processing at sentence level -----------------------------------
 
-        # processed = self.splitSentencesThenAnalyze(map_file_texts, map_file_names)
+        processed = self.splitSentencesThenAnalyze(map_files)
         # processed = self.lowerSentencesThenAnalyze(processed)
         # processed = self.stripSentencesThenAnalyze(processed, to_strip, strip_after, auto_strip)
 
@@ -527,23 +527,23 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
 
         return current_map_files
 
-    def splitSentencesThenAnalyze(self, map_file_texts, map_file_names):
+    def splitSentencesThenAnalyze(self, map_files):
 
         # --- initializing ---------------------------------------------------
-
         self.current_process = 'splitSentencesThenAnalyze'
 
         # unique post to sentence connections
-        map_sentence_lines = pd.DataFrame(columns=['file', 'id_s', 'sentence_hash'])  # index: arbitrary
+        map_sentence_lines = pd.DataFrame(columns=['file_hash', 'id_s', 'sentence_hash'])  # index: arbitrary
 
         # sentences
         unq_sentences = pd.DataFrame(columns=['words', 'commas', 'sentence'])  # index: sentence_hash
         dup_sentences = pd.DataFrame(columns=['count', 'sentence'])  # index: sentence_hash
 
-        for name, text in map_file_texts.items():
+        # --- processing each file -------------------------------------------
+        for file_hash, file_text in map_files['texts'].items():
 
             # splitting sentences
-            sentences = text.splitlines()
+            sentences = file_text.splitlines()
 
             # --- processing each sentence -----------------------------------
 
@@ -555,7 +555,8 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
                 sentence_hash = hashlib.md5(sentence.encode()).hexdigest()
 
                 # creating other data for debugging
-                other_data = {'file': name}
+                file_name = map_files['names'][file_hash]
+                other_data = {'file_name': file_name, 'file_hash': file_hash}
                 if i > 0:
                     other_data['i-1'] = sentences[i - 1]  # previous sentence
                 if i + 1 < len(sentences):
@@ -593,7 +594,7 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
 
                 # --- registering line number --------------------------------
                 map_sentence_lines = map_sentence_lines.append({
-                    'file': name,
+                    'file_hash': file_hash,
                     'id_s': i - reduce_i,
                     'sentence_hash': sentence_hash
                 }, ignore_index=True)
@@ -646,7 +647,6 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
         # TODO LOGGING end: info
 
         res = {'data_sentences': unq_sentences,
-               'map_text_hashes': map_text_hashes,
                'map_sentence_lines': map_sentence_lines}
 
         return res
