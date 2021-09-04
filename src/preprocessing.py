@@ -108,7 +108,7 @@ class Preprocessing:
         self.current_process = 'final_clean_up'
 
         map_file_names = dict()  # map_file_names[file_hash] = file_name
-        map_file_texts = dict()  # map_file_texts[file_name] = file_text
+        map_file_texts = dict()  # map_file_texts[file_hash] = file_text
 
         # --- processing -----------------------------------------------------
         for file_name, file_text in previous_map_file_texts.items():
@@ -122,7 +122,7 @@ class Preprocessing:
             register = self.check_file(map_file_names, file_name, file_hash, file_text, 'map_file_texts')
             if register:
                 map_file_names[file_hash] = file_name
-                map_file_texts[file_name] = file_text
+                map_file_texts[file_hash] = file_text
 
         return map_file_texts, map_file_names
 
@@ -320,49 +320,49 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
 
         # --- processing at sentence level -----------------------------------
 
-        processed = self.splitSentencesThenAnalyze(processed)
-        processed = self.lowerSentencesThenAnalyze(processed)
-        processed = self.stripSentencesThenAnalyze(processed, to_strip, strip_after, auto_strip)
+        # processed = self.splitSentencesThenAnalyze(processed)
+        # processed = self.lowerSentencesThenAnalyze(processed)
+        # processed = self.stripSentencesThenAnalyze(processed, to_strip, strip_after, auto_strip)
 
-        data_sentences = processed['data_sentences']
-        # type    | pandas.DataFrame
-        # --------+-----------------------------------------------------------
-        # index   | md5 hash of the sentence without lowering
-        # columns | words: # of words in the sentence
-        #         | commas: # of commas in the sentence
-        #         | sentence: sentence text without lowering
+        # data_sentences = processed['data_sentences']
+        # # type    | pandas.DataFrame
+        # # --------+-----------------------------------------------------------
+        # # index   | md5 hash of the sentence without lowering
+        # # columns | words: # of words in the sentence
+        # #         | commas: # of commas in the sentence
+        # #         | sentence: sentence text without lowering
 
-        data_sentences_lowered = processed['data_sentences_lowered']
-        # type    | pandas.DataFrame
-        # --------+-----------------------------------------------------------
-        # index   | md5 hash of the sentence without lowering
-        # columns | lowered_hash: md5 hash of the sentence with lowering
-        #         | role: None, 'paret' or 'child' (children have same lowered hash of parent)
-        #         | sentence_lowered: the lowered sentence
+        # data_sentences_lowered = processed['data_sentences_lowered']
+        # # type    | pandas.DataFrame
+        # # --------+-----------------------------------------------------------
+        # # index   | md5 hash of the sentence without lowering
+        # # columns | lowered_hash: md5 hash of the sentence with lowering
+        # #         | role: None, 'paret' or 'child' (children have same lowered hash of parent)
+        # #         | sentence_lowered: the lowered sentence
 
-        data_sentences_stripped = processed['data_sentences_stripped']
-        # type    | pandas.DataFrame
-        # --------+-----------------------------------------------------------
-        # index   | md5 hash of the sentence without lowering or stripping
-        # columns | stripped_hash: md5 hash of the sentence with stripping
-        #         | role: None, 'paret' or 'child' (children have same lowered hash of parent)
-        #         | flag_start: None or non-alphanumeric character at the start of the sentence before stripping
-        #         | flag_end: None or non-alphanumeric character at the end of the sentence before stripping
-        #         | sentence_stripped: the stripped sentence
+        # data_sentences_stripped = processed['data_sentences_stripped']
+        # # type    | pandas.DataFrame
+        # # --------+-----------------------------------------------------------
+        # # index   | md5 hash of the sentence without lowering or stripping
+        # # columns | stripped_hash: md5 hash of the sentence with stripping
+        # #         | role: None, 'paret' or 'child' (children have same lowered hash of parent)
+        # #         | flag_start: None or non-alphanumeric character at the start of the sentence before stripping
+        # #         | flag_end: None or non-alphanumeric character at the end of the sentence before stripping
+        # #         | sentence_stripped: the stripped sentence
 
-        map_text_hashes = processed['map_text_hashes']
-        # type   | dict()
-        # -------+------------------------------------------------------------
-        # keys   | md5 hash of the full text of every unique post without lowering
-        # values | file names
+        # map_text_hashes = processed['map_text_hashes']
+        # # type   | dict()
+        # # -------+------------------------------------------------------------
+        # # keys   | md5 hash of the full text of every unique post without lowering
+        # # values | file names
 
-        map_sentence_lines = processed['map_sentence_lines']
-        # type    | pandas.DataFrame
-        # --------+-----------------------------------------------------------
-        # index   | arbitrary
-        # columns | files: file names
-        #         | id_s: line # of the sentence in the cleaned text of the post
-        #         | sentence_hash: md5 hash of the sentence without lowering
+        # map_sentence_lines = processed['map_sentence_lines']
+        # # type    | pandas.DataFrame
+        # # --------+-----------------------------------------------------------
+        # # index   | arbitrary
+        # # columns | files: file names
+        # #         | id_s: line # of the sentence in the cleaned text of the post
+        # #         | sentence_hash: md5 hash of the sentence without lowering
 
         # --- exit summary ---------------------------------------------------
         # TODO LOGGING: info
@@ -404,7 +404,7 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
         self.current_process = 'checkFiles'
 
         map_file_names = dict()  # map_file_names[file_hash] = file_name
-        map_file_texts = dict()  # map_file_texts[file_name] = file_text
+        map_file_texts = dict()  # map_file_texts[file_hash] = file_text
 
         # --- processing -----------------------------------------------------
         for file_name, file_text in previous_map_file_texts.items():
@@ -412,7 +412,7 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
             register = self.check_file(map_file_names, file_name, file_hash, file_text, 'map_file_texts')
             if register:
                 map_file_names[file_hash] = file_name
-                map_file_texts[file_name] = file_text
+                map_file_texts[file_hash] = file_text
 
         return map_file_texts
 
@@ -422,7 +422,7 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
         self.current_process = 'standardPreprocessing_HTML_tags'
 
         map_file_names = dict()  # map_file_names[file_hash] = file_name
-        map_file_texts = dict()  # map_file_texts[file_name] = file_text
+        map_file_texts = dict()  # map_file_texts[file_hash] = file_text
 
         replace_dict = {'&amp;': '&',  # putting '&' back
                         '\\n': '\n',  # replacing weird newline artifact: \\n
@@ -440,7 +440,7 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
             register = self.check_file(map_file_names, file_name, file_hash, file_text, 'map_file_texts')
             if register:
                 map_file_names[file_hash] = file_name
-                map_file_texts[file_name] = file_text
+                map_file_texts[file_hash] = file_text
 
         return map_file_texts
 
@@ -450,7 +450,7 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
         self.current_process = 'standardPreprocessing_HTML_tags'
 
         map_file_names = dict()  # map_file_names[file_hash] = file_name
-        map_file_texts = dict()  # map_file_texts[file_name] = file_text
+        map_file_texts = dict()  # map_file_texts[file_hash] = file_text
 
         # --- processing -----------------------------------------------------
         tags = self.HTML_tags_get_list(previous_map_file_texts)
@@ -463,7 +463,7 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
             register = self.check_file(map_file_names, file_name, file_hash, file_text, 'map_file_texts')
             if register:
                 map_file_names[file_hash] = file_name
-                map_file_texts[file_name] = file_text
+                map_file_texts[file_hash] = file_text
 
         return map_file_texts
 
@@ -900,7 +900,7 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
         self.current_process = 'indeedSamplesTemplateExtract'
 
         map_file_names = dict()  # map_file_names[file_hash] = file_name
-        map_file_texts = dict()  # map_file_texts[file_name] = file_text
+        map_file_texts = dict()  # map_file_texts[file_hash] = file_text
 
         # --- processing -----------------------------------------------------
         for file_name, file_text in previous_map_file_texts.items():
@@ -927,6 +927,6 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
             register = self.check_file(map_file_names, file_name, file_hash, file_text, 'map_file_texts')
             if register:
                 map_file_names[file_hash] = file_name
-                map_file_texts[file_name] = file_text
+                map_file_texts[file_hash] = file_text
 
         return map_file_texts
