@@ -444,7 +444,7 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
         processed_html = self.HTML_tags_remove(processed_html, tags)
 
         # --- checking files -------------------------------------------------
-        for file_name, file_text in text_dict.items():
+        for file_name, file_text in processed_html.items():
             file_hash = hashlib.md5(file_text.encode()).hexdigest()
             register = self.check_file(map_file_names, file_name, file_hash, file_text, 'map_file_texts')
             if register:
