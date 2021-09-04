@@ -28,10 +28,10 @@ class Preprocessing:
         prefix = f'{self.current_process} {f_hash} [{stage}] {f_name}'
         print(prefix, f_text[:lim], '...', f_text[-lim:])  # TODO LOGGING: debug or info
 
-    def HTML_tags_get_list(self, text_dict):
+    def HTML_tags_get_list(self, previous_map_file_texts):
         tags = pd.DataFrame(columns=['ends', 'forms'])
 
-        for name, text in text_dict.items():
+        for name, text in previous_map_file_texts.items():
             for tag in re.findall('<.*?>', text):
                 if tag[1] != '/':
                     form = copy.deepcopy(tag)
@@ -57,11 +57,11 @@ class Preprocessing:
             text = text.replace(remove, char)
         return text
 
-    def HTML_tags_replace_empty(self, text_dict, tags):
+    def HTML_tags_replace_empty(self, previous_map_file_texts, tags):
         tags_with_endings = copy.deepcopy(tags.query('ends == True'))
         replaced_tags = dict()
 
-        for name, text in text_dict.items():
+        for name, text in previous_map_file_texts.items():
 
             size_start = len(text)
 
@@ -83,10 +83,10 @@ class Preprocessing:
 
         return replaced_tags
 
-    def HTML_tags_remove(self, text_dict, tags):
+    def HTML_tags_remove(self, previous_map_file_texts, tags):
         removed_tags = dict()
 
-        for name, text in text_dict.items():
+        for name, text in previous_map_file_texts.items():
 
             size_start = len(text)
 
@@ -102,7 +102,7 @@ class Preprocessing:
 
         return removed_tags
 
-    def final_clean_up(self, text_dict):
+    def final_clean_up(self, previous_map_file_texts):
 
         # --- initializing ---------------------------------------------------
         self.current_process = 'final_clean_up'
@@ -111,7 +111,7 @@ class Preprocessing:
         map_file_texts = dict()  # map_file_texts[file_name] = file_text
 
         # --- processing -----------------------------------------------------
-        for file_name, file_text in text_dict.items():
+        for file_name, file_text in previous_map_file_texts.items():
 
             # cleaning file
             for char in ('\n', ' '):
@@ -392,7 +392,7 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
 
         return raw
 
-    def checkFiles(self, text_dict):
+    def checkFiles(self, previous_map_file_texts):
 
         # --- initializing ---------------------------------------------------
         self.current_process = 'checkFiles'
@@ -401,7 +401,7 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
         map_file_texts = dict()  # map_file_texts[file_name] = file_text
 
         # --- processing -----------------------------------------------------
-        for file_name, file_text in text_dict.items():
+        for file_name, file_text in previous_map_file_texts.items():
             file_hash = hashlib.md5(file_text.encode()).hexdigest()
             register = self.check_file(map_file_names, file_name, file_hash, file_text, 'map_file_texts')
             if register:
@@ -410,7 +410,7 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
 
         return map_file_texts
 
-    def standardPreprocessing_HTML_replacements(self, text_dict):
+    def standardPreprocessing_HTML_replacements(self, previous_map_file_texts):
 
         # --- initializing ---------------------------------------------------
         self.current_process = 'standardPreprocessing_HTML_tags'
@@ -423,7 +423,7 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
                         "\\'": "'"}  # replacing \'
 
         # --- processing -----------------------------------------------------
-        for file_name, file_text in text_dict.items():
+        for file_name, file_text in previous_map_file_texts.items():
 
             # replacing characters
             for old, new in replace_dict.items():
@@ -438,7 +438,7 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
 
         return map_file_texts
 
-    def standardPreprocessing_HTML_tags(self, text_dict):
+    def standardPreprocessing_HTML_tags(self, previous_map_file_texts):
 
         # --- initializing ---------------------------------------------------
         self.current_process = 'standardPreprocessing_HTML_tags'
@@ -447,8 +447,8 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
         map_file_texts = dict()  # map_file_texts[file_name] = file_text
 
         # --- processing -----------------------------------------------------
-        tags = self.HTML_tags_get_list(text_dict)
-        processed_html = self.HTML_tags_replace_empty(text_dict, tags)
+        tags = self.HTML_tags_get_list(previous_map_file_texts)
+        processed_html = self.HTML_tags_replace_empty(previous_map_file_texts, tags)
         processed_html = self.HTML_tags_remove(processed_html, tags)
 
         # --- checking files -------------------------------------------------
@@ -461,7 +461,7 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
 
         return map_file_texts
 
-    def splitSentencesThenAnalyze(self, text_dict):
+    def splitSentencesThenAnalyze(self, previous_map_file_texts):
 
         # --- initializing ---------------------------------------------------
 
@@ -482,7 +482,7 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
 
         # --- processing each file -------------------------------------------
 
-        for name, text in text_dict.items():
+        for name, text in previous_map_file_texts.items():
 
             # --- checking file length ---------------------------------------
             stage = 'before-processing'
@@ -888,7 +888,7 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
 
         return previous_res
 
-    def indeedSamplesTemplateExtract(self, text_dict):
+    def indeedSamplesTemplateExtract(self, previous_map_file_texts):
 
         # --- initializing ---------------------------------------------------
         self.current_process = 'indeedSamplesTemplateExtract'
@@ -897,7 +897,7 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
         map_file_texts = dict()  # map_file_texts[file_name] = file_text
 
         # --- processing -----------------------------------------------------
-        for file_name, file_text in text_dict.items():
+        for file_name, file_text in previous_map_file_texts.items():
 
             # sample files format: prefix and suffix
             file_text = self.remove_prefix(file_text, "['")
