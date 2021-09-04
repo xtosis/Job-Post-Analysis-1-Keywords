@@ -281,7 +281,7 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
 
     def preprocessing(self, path, template, to_strip=' /\\!.:#?-();,*+|$[]', strip_after='lowerring', auto_strip=True):
 
-        # initializations
+        # --- initializations ------------------------------------------------
         self.messages = pd.DataFrame(columns=[
             'sentence_hash',  # --- md5 hash of original sentences (no lowering, stripping, etc)
             'process',  # --------- e.g. 'stripStentencesThenAnalyze'
@@ -300,20 +300,26 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
             'data'])
 
         raw = self.loadData(path)
-        processed = self.checkFiles(raw)
+
+        # --- processing at file level ---------------------------------------
+
+        map_file_texts = self.checkFiles(raw)
         process_HTML = False
 
         # templates
         if template == 'indeed_samples':
-            processed = self.indeedSamplesTemplateExtract(processed)
+            map_file_texts = self.indeedSamplesTemplateExtract(map_file_texts)
             process_HTML = True
 
         # html
         if process_HTML:
-            processed = self.standardPreprocessing_HTML_replacements(processed)
-            processed = self.standardPreprocessing_HTML_tags(processed)
+            map_file_texts = self.standardPreprocessing_HTML_replacements(map_file_texts)
+            map_file_texts = self.standardPreprocessing_HTML_tags(map_file_texts)
 
-        processed = self.final_clean_up(processed)
+        map_file_texts = self.final_clean_up(map_file_texts)
+
+        # --- processing at sentence level -----------------------------------
+
         processed = self.splitSentencesThenAnalyze(processed)
         processed = self.lowerSentencesThenAnalyze(processed)
         processed = self.stripSentencesThenAnalyze(processed, to_strip, strip_after, auto_strip)
@@ -358,7 +364,7 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
         #         | id_s: line # of the sentence in the cleaned text of the post
         #         | sentence_hash: md5 hash of the sentence without lowering
 
-        # exit summary
+        # --- exit summary ---------------------------------------------------
         # TODO LOGGING: info
         print('-' * 79)
         print('messages')
