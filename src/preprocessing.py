@@ -124,7 +124,7 @@ class Preprocessing:
                 map_file_names[file_hash] = file_name
                 map_file_texts[file_name] = file_text
 
-        return map_file_texts
+        return map_file_texts, map_file_names
 
 
 class PreprocessingChecks:
@@ -316,7 +316,7 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
             map_file_texts = self.standardPreprocessing_HTML_replacements(map_file_texts)
             map_file_texts = self.standardPreprocessing_HTML_tags(map_file_texts)
 
-        map_file_texts = self.final_clean_up(map_file_texts)
+        map_file_texts, map_file_names = self.final_clean_up(map_file_texts)
 
         # --- processing at sentence level -----------------------------------
 
