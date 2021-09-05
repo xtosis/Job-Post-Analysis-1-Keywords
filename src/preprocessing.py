@@ -365,6 +365,13 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
             'reason',
             'data'])
 
+        # notes step by step processing of each sentence
+        self.history = pd.DataFrame(columns=[
+            'process',
+            'seq',  # process sequence number
+            'sentence_hash',
+            'sentence'])
+
     def preprocessing(self, path, template, to_strip=' /\\!.:#?-();,*+|$[]', strip_after='lowerring', auto_strip=True):
 
         self.initialize_dataframes()
