@@ -193,6 +193,13 @@ class Preprocessing:
 
         return current_map_files
 
+    def update_history(self, seq, s_hash, s_text):
+        self.history = self.history.append({
+            'seq': seq,
+            'process': self.current_process,
+            'sentence_hash': s_hash,
+            'sentence': s_text}, ignore_index=True)
+
 
 class PreprocessingChecks:
 
@@ -367,8 +374,8 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
 
         # notes step by step processing of each sentence
         self.history = pd.DataFrame(columns=[
-            'process',
             'seq',  # process sequence number
+            'process',
             'sentence_hash',
             'sentence'])
 
