@@ -270,7 +270,7 @@ class PreprocessingChecks:
 
             # updating dropped data report --------------------------------------
             self.dropped_data_report = self.dropped_data_report.append({
-                'target': f'data_sentences_{name}',
+                'target': f'data_unq_sentences_{name}',
                 'id': sent_hash,
                 'process': self.current_process,
                 'stage': stage,
@@ -389,11 +389,11 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
 
         # --- processing at sentence level -----------------------------------
 
-        processed = self.splitSentencesThenAnalyze(map_files)
+        sentence_data = self.splitSentencesThenAnalyze(map_files)
         # processed = self.lowerSentencesThenAnalyze(processed)
         # processed = self.stripSentencesThenAnalyze(processed, to_strip, strip_after, auto_strip)
 
-        # data_sentences = processed['data_sentences']
+        # data_unq_sentences = processed['data_unq_sentences']
         # # type    | pandas.DataFrame
         # # --------+-----------------------------------------------------------
         # # index   | md5 hash of the sentence without lowering
@@ -401,7 +401,7 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
         # #         | commas: # of commas in the sentence
         # #         | sentence: sentence text without lowering
 
-        # data_sentences_lowered = processed['data_sentences_lowered']
+        # data_unq_sentences_lowered = processed['data_unq_sentences_lowered']
         # # type    | pandas.DataFrame
         # # --------+-----------------------------------------------------------
         # # index   | md5 hash of the sentence without lowering
@@ -409,7 +409,7 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
         # #         | role: None, 'paret' or 'child' (children have same lowered hash of parent)
         # #         | sentence_lowered: the lowered sentence
 
-        # data_sentences_stripped = processed['data_sentences_stripped']
+        # data_unq_sentences_stripped = processed['data_unq_sentences_stripped']
         # # type    | pandas.DataFrame
         # # --------+-----------------------------------------------------------
         # # index   | md5 hash of the sentence without lowering or stripping
@@ -425,7 +425,7 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
         # # keys   | md5 hash of the full text of every unique post without lowering
         # # values | file names
 
-        # map_sentence_lines = processed['map_sentence_lines']
+        # map_lines = processed['map_lines']
         # # type    | pandas.DataFrame
         # # --------+-----------------------------------------------------------
         # # index   | arbitrary
@@ -533,11 +533,10 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
         self.current_process = 'splitSentencesThenAnalyze'
 
         # unique post to sentence connections
-        map_sentence_lines = pd.DataFrame(columns=['file_hash', 'id_s', 'sentence_hash'])  # index: arbitrary
+        map_lines = pd.DataFrame(columns=['file_hash', 'id_s', 'sentence_hash'])  # index: arbitrary
 
         # sentences
-        unq_sentences = pd.DataFrame(columns=['words', 'commas', 'sentence'])  # index: sentence_hash
-        dup_sentences = pd.DataFrame(columns=['count', 'sentence'])  # index: sentence_hash
+        data_unq_sentences = dict()  # key: sentence_hash, value sentence_text
 
         # --- processing each file -------------------------------------------
         for file_hash, file_text in map_files['texts'].items():
@@ -582,7 +581,7 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
                     dropped_data_report_data = {'sentence': f'|{sentence}|'}
                     dropped_data_report_data.update(other_data)
                     self.dropped_data_report = self.dropped_data_report.append({
-                        'target': 'map_sentence_lines',
+                        'target': 'map_lines',
                         'id': sentence_hash,
                         'process': self.current_process,
                         'stage': stage,
@@ -593,7 +592,7 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
                     continue
 
                 # --- registering line number --------------------------------
-                map_sentence_lines = map_sentence_lines.append({
+                map_lines = map_lines.append({
                     'file_hash': file_hash,
                     'id_s': i - reduce_i,
                     'sentence_hash': sentence_hash
@@ -603,24 +602,12 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
                 stage = 'checking-duplicity'
 
                 # sentence is a duplicate
-                if sentence_hash in unq_sentences.index.values:
-
-                    # TODO LOGGING: debug
-                    print(f'{self.current_process} {sentence_hash} [{stage}] DUP: {sentence}')
-
-                    # first occurance: add row
-                    if sentence_hash not in dup_sentences.index.values:
-                        row = pd.Series({'count': 1, 'sentence': sentence}, name=sentence_hash)
-                        dup_sentences = dup_sentences.append(row)
-
-                    # subsequent occurances: increment duplicate count
-                    else:
-                        val = dup_sentences.loc[sentence_hash, 'count'] + 1
-                        dup_sentences.loc[sentence_hash, 'count'] = val
+                if sentence_hash in data_unq_sentences.keys():
+                    print(f'{self.current_process} {sentence_hash} [{stage}] DUP: {sentence}')  # TODO LOGGING: debug
 
                     # updating dropped data report
                     self.dropped_data_report = self.dropped_data_report.append({
-                        'target': 'data_sentences',
+                        'target': 'data_unq_sentences',
                         'id': sentence_hash,
                         'process': self.current_process,
                         'stage': stage,
@@ -631,25 +618,12 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
                     continue
 
                 # --- registering unique sentence ----------------------------
-                words = sentence.count(' ') + 1
-                commas = sentence.count(',')
-                row = pd.Series({'words': words, 'commas': commas, 'sentence': sentence}, name=sentence_hash)
-                unq_sentences = unq_sentences.append(row)
+                print(f'{self.current_process} {sentence_hash} [{stage}] UNQ: {sentence}')  # TODO LOGGING: debug
+                data_unq_sentences[sentence_hash] = sentence
 
-                # TODO LOGGING: debug
-                print(f'{self.current_process} {sentence_hash} [{stage}] UNQ: {sentence}')
+        sentence_data = {'data_unq_sentences': data_unq_sentences, 'map_lines': map_lines}
 
-        # TODO LOGGING start: info
-        dup_sentences.sort_values(['count'], inplace=True)
-        print('-' * 79)
-        print('dup_sentences')
-        print(dup_sentences)
-        # TODO LOGGING end: info
-
-        res = {'data_sentences': unq_sentences,
-               'map_sentence_lines': map_sentence_lines}
-
-        return res
+        return sentence_data
 
     def lowerSentencesThenAnalyze(self, previous_res):
 
@@ -658,10 +632,10 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
         self.current_process = 'lowerSentencesThenAnalyze'
 
         # will contain lowered sentences and their subsequent lowered hashes
-        data_sentences_lowered = pd.DataFrame(columns=['lowered_hash', 'parent', 'sentence_lowered'])  # index: unlowered sentence hash
+        data_unq_sentences_lowered = pd.DataFrame(columns=['lowered_hash', 'parent', 'sentence_lowered'])  # index: unlowered sentence hash
 
         # --- processing -----------------------------------------------------
-        previous_data = previous_res['data_sentences']['sentence']
+        previous_data = previous_res['data_unq_sentences']['sentence']
 
         for sentence_hash, sentence in previous_data.items():
 
@@ -683,7 +657,7 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
 
                 # updating dropped data report
                 self.dropped_data_report = self.dropped_data_report.append({
-                    'target': 'data_sentences_lowered',
+                    'target': 'data_unq_sentences_lowered',
                     'id': sentence_hash,
                     'process': self.current_process,
                     'stage': stage,
@@ -696,16 +670,16 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
             # --- lowering ---------------------------------------------------
             sentence_lowered = sentence.lower()
             lowered_hash = hashlib.md5(sentence_lowered.encode()).hexdigest()
-            original = self.check_duplicity(data_sentences_lowered, 'lowered', lowered_hash, sentence_lowered)
+            original = self.check_duplicity(data_unq_sentences_lowered, 'lowered', lowered_hash, sentence_lowered)
 
             # appending
             row = pd.Series({'lowered_hash': lowered_hash,
                              'parent': original,
                              'sentence_lowered': sentence_lowered},
                             name=sentence_hash)
-            data_sentences_lowered = data_sentences_lowered.append(row)
+            data_unq_sentences_lowered = data_unq_sentences_lowered.append(row)
 
-        previous_res['data_sentences_lowered'] = data_sentences_lowered
+        previous_res['data_unq_sentences_lowered'] = data_unq_sentences_lowered
 
         return previous_res
 
@@ -716,7 +690,7 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
         self.current_process = 'stripSentencesThenAnalyze'
 
         # will contain unique stripped sentences and their subsequent stripped hashes
-        data_sentences_stripped = pd.DataFrame(columns=['stripped_hash', 'parent', 'flag_start', 'flag_end', 'sentence_stripped'])  # index: unstripped sentence hash
+        data_unq_sentences_stripped = pd.DataFrame(columns=['stripped_hash', 'parent', 'flag_start', 'flag_end', 'sentence_stripped'])  # index: unstripped sentence hash
 
         # --- making sure inputs to the function are valid -------------------
 
@@ -730,12 +704,12 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
 
         # previous data auto selection deciding what version of the sentences to process
         if strip_after == 'lowerring':
-            previous_data = previous_res['data_sentences_lowered']
+            previous_data = previous_res['data_unq_sentences_lowered']
             previous_data = previous_data[pd.isnull(previous_data['parent'])]  # dropping children (duplicates)
             previous_data = previous_data['sentence_lowered']
 
         elif strip_after == 'splitting':
-            previous_data = previous_res['data_sentences']['sentence']
+            previous_data = previous_res['data_unq_sentences']['sentence']
         else:
 
             # TODO LOGGING: error
@@ -763,7 +737,7 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
 
                 # updating dropped data report
                 self.dropped_data_report = self.dropped_data_report.append({
-                    'target': 'data_sentences_stripped',
+                    'target': 'data_unq_sentences_stripped',
                     'id': sentence_hash,
                     'process': self.current_process,
                     'stage': stage,
@@ -835,7 +809,7 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
 
                 # updating dropped data report
                 self.dropped_data_report = self.dropped_data_report.append({
-                    'target': 'data_sentences_stripped',
+                    'target': 'data_unq_sentences_stripped',
                     'id': sentence_hash,
                     'process': self.current_process,
                     'stage': stage,
@@ -846,7 +820,7 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
                 continue
 
             # --- checking duplicity and appending -------------------
-            original = self.check_duplicity(data_sentences_stripped, 'stripped', stripped_hash, sentence_stripped)
+            original = self.check_duplicity(data_unq_sentences_stripped, 'stripped', stripped_hash, sentence_stripped)
 
             # appending
             row = pd.Series({'stripped_hash': stripped_hash,
@@ -855,13 +829,13 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
                              'flag_end': flag_end,
                              'sentence_stripped': sentence_stripped},
                             name=sentence_hash)
-            data_sentences_stripped = data_sentences_stripped.append(row)
+            data_unq_sentences_stripped = data_unq_sentences_stripped.append(row)
 
         # --- exit stats -----------------------------------------------------
 
         # frequency distribution of all unique flag_start and flag_end
-        fd_flag_start = data_sentences_stripped['flag_start'].value_counts()
-        fd_flag_end = data_sentences_stripped['flag_end'].value_counts()
+        fd_flag_start = data_unq_sentences_stripped['flag_start'].value_counts()
+        fd_flag_end = data_unq_sentences_stripped['flag_end'].value_counts()
         fd_flags = pd.concat((fd_flag_start, fd_flag_end), axis=1)
         fd_flags.fillna(0, inplace=True)
         fd_flags['flag_start'] = fd_flags['flag_start'].astype(int)
@@ -875,6 +849,6 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
         print(fd_flags)
         # TODO LOGGING: info
 
-        previous_res['data_sentences_stripped'] = data_sentences_stripped
+        previous_res['data_unq_sentences_stripped'] = data_unq_sentences_stripped
 
         return previous_res
