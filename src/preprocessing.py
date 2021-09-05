@@ -393,46 +393,6 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
         # processed = self.lowerSentencesThenAnalyze(processed)
         # processed = self.stripSentencesThenAnalyze(processed, to_strip, strip_after, auto_strip)
 
-        # data_unq_sentences = processed['data_unq_sentences']
-        # # type    | pandas.DataFrame
-        # # --------+-----------------------------------------------------------
-        # # index   | md5 hash of the sentence without lowering
-        # # columns | words: # of words in the sentence
-        # #         | commas: # of commas in the sentence
-        # #         | sentence: sentence text without lowering
-
-        # data_unq_sentences_lowered = processed['data_unq_sentences_lowered']
-        # # type    | pandas.DataFrame
-        # # --------+-----------------------------------------------------------
-        # # index   | md5 hash of the sentence without lowering
-        # # columns | lowered_hash: md5 hash of the sentence with lowering
-        # #         | role: None, 'paret' or 'child' (children have same lowered hash of parent)
-        # #         | sentence_lowered: the lowered sentence
-
-        # data_unq_sentences_stripped = processed['data_unq_sentences_stripped']
-        # # type    | pandas.DataFrame
-        # # --------+-----------------------------------------------------------
-        # # index   | md5 hash of the sentence without lowering or stripping
-        # # columns | stripped_hash: md5 hash of the sentence with stripping
-        # #         | role: None, 'paret' or 'child' (children have same lowered hash of parent)
-        # #         | flag_start: None or non-alphanumeric character at the start of the sentence before stripping
-        # #         | flag_end: None or non-alphanumeric character at the end of the sentence before stripping
-        # #         | sentence_stripped: the stripped sentence
-
-        # map_text_hashes = processed['map_text_hashes']
-        # # type   | dict()
-        # # -------+------------------------------------------------------------
-        # # keys   | md5 hash of the full text of every unique post without lowering
-        # # values | file names
-
-        # map_lines = processed['map_lines']
-        # # type    | pandas.DataFrame
-        # # --------+-----------------------------------------------------------
-        # # index   | arbitrary
-        # # columns | files: file names
-        # #         | id_s: line # of the sentence in the cleaned text of the post
-        # #         | sentence_hash: md5 hash of the sentence without lowering
-
         # --- exit summary ---------------------------------------------------
         # TODO LOGGING: info
         print('-' * 79)
