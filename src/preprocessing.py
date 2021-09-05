@@ -346,9 +346,8 @@ class PreprocessingChecks:
 
 class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger):
 
-    def preprocessing(self, path, template, to_strip=' /\\!.:#?-();,*+|$[]', strip_after='lowerring', auto_strip=True):
+    def initialize_dataframes(self):
 
-        # --- initializations ------------------------------------------------
         self.messages = pd.DataFrame(columns=[
             'sentence_hash',  # --- md5 hash of original sentences (no lowering, stripping, etc)
             'process',  # --------- e.g. 'stripStentencesThenAnalyze'
@@ -366,6 +365,9 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
             'reason',
             'data'])
 
+    def preprocessing(self, path, template, to_strip=' /\\!.:#?-();,*+|$[]', strip_after='lowerring', auto_strip=True):
+
+        self.initialize_dataframes()
         raw = self.loadData(path)
 
         # --- processing at file level ---------------------------------------
