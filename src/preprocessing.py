@@ -193,12 +193,12 @@ class Preprocessing:
 
         return current_map_files
 
-    def update_history(self, seq, s_hash, s_text):
-        self.history = self.history.append({
-            'seq': seq,
-            'process': self.current_process,
-            'sentence_hash': s_hash,
-            'sentence': s_text}, ignore_index=True)
+    def update_history(self, seq, s_text, s_hash_org, s_hash_new):
+        row = pd.Series({'sentence_id': s_hash_org,
+                         'seq': seq,
+                         'process': self.current_process,
+                         'sentence': s_text}, name=s_hash_new)
+        self.history = self.history.append(row)
 
 
 class PreprocessingChecks:
@@ -373,10 +373,10 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
             'data'])
 
         # notes step by step processing of each sentence
-        self.history = pd.DataFrame(columns=[
+        self.history = pd.DataFrame(columns=[  # index: new hash of sentence after processing
+            'sentence_id',
             'seq',  # process sequence number
             'process',
-            'sentence_hash',
             'sentence'])
 
     def preprocessing(self, path, template, to_strip=' /\\!.:#?-();,*+|$[]', strip_after='lowerring', auto_strip=True):
@@ -411,6 +411,10 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
 
         # --- exit summary ---------------------------------------------------
         # TODO LOGGING: info
+        self.history.sort_values(['sentence_id', 'seq'], inplace=True)
+        print('-' * 79)
+        print('history')
+        print(self.history)
         print('-' * 79)
         print('messages')
         print(self.messages)
