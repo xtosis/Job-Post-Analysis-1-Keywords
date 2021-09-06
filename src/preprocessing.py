@@ -600,6 +600,7 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
                 # --- registering unique sentence ----------------------------
                 print(f'{self.current_process} {sentence_hash} [{stage}] UNQ: {sentence}')  # TODO LOGGING: debug
                 data_unq_sentences[sentence_hash] = sentence
+                self.update_history(1, sentence, sentence_hash, sentence_hash)
 
         sentence_data = {'data_unq_sentences': data_unq_sentences, 'map_lines': map_lines}
 
