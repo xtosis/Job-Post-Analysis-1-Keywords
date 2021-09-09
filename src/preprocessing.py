@@ -355,6 +355,7 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
 
     def initialize_dataframes(self):
 
+        # TODO: change this to only contain new formatting patterns (new character to be ignored, etc)
         self.messages = pd.DataFrame(columns=[
             'sentence_hash',  # --- md5 hash of original sentences (no lowering, stripping, etc)
             'process',  # --------- e.g. 'stripStentencesThenAnalyze'
@@ -364,6 +365,9 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
             'message',  # --------- e.g. 'zero length'
             'data'])  # ----------- e.g. {'before': '|raw sentence|', 'after': '|processed sentence|'}
 
+        # notes data about dropped files and sentences. reasons why a file or sentence might be dropped:
+        # - detected as a duplicate
+        # - length check failed
         self.dropped_data_report = pd.DataFrame(columns=[
             'target',  # name of the target table that it was supposed to be registered in
             'id',  # the current id or would be id of the record
@@ -378,6 +382,12 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
             'seq',  # process sequence number
             'process',
             'sentence'])
+
+        # notes all unique sentence hashes
+        self.hashes = pd.DataFrame(columns=[
+            # index --------- sentence hash from splitSentencesThenAnalyze (serves as sentence_id in preprocessing only)
+            'lowered',  # --- sentence hash from lowerSentencesThenAnalyze
+            'stripped'])  # - sentence hash from stripSentencesThenAnalyze (serves as sentence_id in models)
 
     def preprocessing(self, path, template, to_strip=' /\\!.:#?-();,*+|$[]', strip_after='lowerring', auto_strip=True):
 
