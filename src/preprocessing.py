@@ -355,6 +355,20 @@ class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger)
 
     def initialize_dataframes(self):
 
+        # this is the main dataframe that outputs all unique processed sentences and some basic
+        # hand engineered data
+        self.sentences = pd.DataFrame(columns=[
+            'sentence',  # ----- preprocessed sentence text
+            'n_words',  # ------ number of words
+            'n_commas',  # ----- number of commas
+            'word_first',  # --- first word of the sentence
+            'word_last',  # ---- last word of the sentence
+            'word_big',  # ----- biggest word of the sentence
+            'word_freq',  # ---- most frequent word of the sentece (None if all are repeated once)
+            'flag_start',  # --- non-alphanumeric character at the start of the sentence
+            'flag_end',  # ----- non-alphanumeric character at the end of the sentence
+        ])
+
         # TODO: change this to only contain new formatting patterns (new character to be ignored, etc)
         self.messages = pd.DataFrame(columns=[
             'sentence_hash',  # --- md5 hash of original sentences (no lowering, stripping, etc)
