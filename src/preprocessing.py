@@ -415,7 +415,6 @@ class FileToSentencePreprocessor(Preprocessing, PreprocessingChecks, SubProcessL
 
     def preprocessing(self, path, template):
 
-        self.initialize_dataframes()
         raw = self.loadData(path)
 
         # --- processing at file level ---------------------------------------
