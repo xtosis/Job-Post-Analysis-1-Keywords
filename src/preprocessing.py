@@ -351,7 +351,7 @@ class PreprocessingChecks:
             return False
 
 
-class KeywordPreprocessing(Preprocessing, PreprocessingChecks, SubProcessLogger):
+class FileToSentencePreprocessor(Preprocessing, PreprocessingChecks, SubProcessLogger):
 
     def initialize_dataframes(self):
 
