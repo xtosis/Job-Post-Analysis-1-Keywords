@@ -1,5 +1,5 @@
 from common.paths import PATH_DATA
-from keywords import KeywordsModel
+from models import KeywordsModel
 from settings import PANDAS_DISPLAY_SETTINGS
 
 PANDAS_DISPLAY_SETTINGS()
