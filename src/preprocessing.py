@@ -696,7 +696,7 @@ class FileToSentencePreprocessor(Preprocessing, PreprocessingChecks, SubProcessL
 
         return previous_res
 
-    def stripSentencesThenAnalyze(self, previous_res, to_strip, strip_after, auto_strip):
+    def stripSentencesThenAnalyze(self, previous_res):
 
         # --- initializing ---------------------------------------------------
 
@@ -708,7 +708,7 @@ class FileToSentencePreprocessor(Preprocessing, PreprocessingChecks, SubProcessL
         # --- making sure inputs to the function are valid -------------------
 
         # early exit
-        if to_strip is None or strip_after is None:
+        if self.to_strip is None or self.strip_after is None:
 
             # TODO LOGGING: info
             print(f'{self.current_process} EARLY EXIT')
@@ -716,12 +716,12 @@ class FileToSentencePreprocessor(Preprocessing, PreprocessingChecks, SubProcessL
             return previous_res
 
         # previous data auto selection deciding what version of the sentences to process
-        if strip_after == 'lowerring':
+        if self.strip_after == 'lowerring':
             previous_data = previous_res['data_unq_sentences_lowered']
             previous_data = previous_data[pd.isnull(previous_data['parent'])]  # dropping children (duplicates)
             previous_data = previous_data['sentence_lowered']
 
-        elif strip_after == 'splitting':
+        elif self.strip_after == 'splitting':
             previous_data = previous_res['data_unq_sentences']['sentence']
         else:
 
@@ -778,7 +778,7 @@ class FileToSentencePreprocessor(Preprocessing, PreprocessingChecks, SubProcessL
             stage = 'after-flagging'
             for flag in (flag_start, flag_end):
                 if flag is not None:
-                    if flag not in to_strip:
+                    if flag not in self.to_strip:
 
                         # notifying about new alphanumeric character so it can be added later
                         msg = {'sentence_hash': sentence_hash,
@@ -790,8 +790,8 @@ class FileToSentencePreprocessor(Preprocessing, PreprocessingChecks, SubProcessL
                         self.messages = self.messages.append(msg, ignore_index=True)
 
                         # warning about auto stripping of new alphanumeric characters
-                        if auto_strip:
-                            to_strip = to_strip + flag
+                        if self.auto_strip:
+                            self.to_strip = self.to_strip + flag
                             msg = {'sentence_hash': sentence_hash,
                                    'process': self.current_process,
                                    'stage': stage,
@@ -801,7 +801,7 @@ class FileToSentencePreprocessor(Preprocessing, PreprocessingChecks, SubProcessL
                             self.messages = self.messages.append(msg, ignore_index=True)
 
             # --- stripping ----------------------------------------------
-            sentence_stripped = sentence.strip(to_strip)
+            sentence_stripped = sentence.strip(self.to_strip)
             stripped_hash = hashlib.md5(sentence_stripped.encode()).hexdigest()
             stage = 'after-stripping'
 
