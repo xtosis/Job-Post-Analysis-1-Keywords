@@ -353,6 +353,14 @@ class PreprocessingChecks:
 
 class FileToSentencePreprocessor(Preprocessing, PreprocessingChecks, SubProcessLogger):
 
+    def __init__(self, to_strip=' /\\!.:#?-();,*+|$[]', strip_after='lowerring', auto_strip=True):
+        self.initialize_dataframes()
+
+        # settings for stripSentencesThenAnalyze
+        self.to_strip = to_strip
+        self.strip_after = strip_after
+        self.auto_strip = auto_strip
+
     def initialize_dataframes(self):
 
         # this is the main dataframe that outputs all unique processed sentences and some basic
@@ -403,7 +411,7 @@ class FileToSentencePreprocessor(Preprocessing, PreprocessingChecks, SubProcessL
             'lowered',  # --- sentence hash from lowerSentencesThenAnalyze
             'stripped'])  # - sentence hash from stripSentencesThenAnalyze (serves as sentence_id in models)
 
-    def preprocessing(self, path, template, to_strip=' /\\!.:#?-();,*+|$[]', strip_after='lowerring', auto_strip=True):
+    def preprocessing(self, path, template):
 
         self.initialize_dataframes()
         raw = self.loadData(path)

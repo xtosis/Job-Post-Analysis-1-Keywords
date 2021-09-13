@@ -13,10 +13,13 @@ REPLACE = {
 }
 
 
-class Process(ProcessLogger, KeywordSettings, FileToSentencePreprocessor):
+class Process(ProcessLogger, KeywordSettings):
     def __init__(self, job_post_path, keywords_path, template):
+
+        preprocessor = FileToSentencePreprocessor()
+        preprocessor.preprocessing(job_post_path, template)
+
         self.loadKeywords(keywords_path)
-        self.preprocessing(job_post_path, template)  # from KeywordPreprocessing
         self.process()
         self.finish()
 
