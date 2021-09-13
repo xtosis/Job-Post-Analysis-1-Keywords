@@ -413,7 +413,7 @@ class FileToSentencePreprocessor(Preprocessing, PreprocessingChecks, SubProcessL
             'lowered',  # --- sentence hash from lowerSentencesThenAnalyze
             'stripped'])  # - sentence hash from stripSentencesThenAnalyze (serves as sentence_id in models)
 
-    def preprocessing(self, path, template):
+    def preprocess(self, path, template):
 
         raw = self.loadData(path)
 

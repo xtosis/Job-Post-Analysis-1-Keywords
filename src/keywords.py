@@ -17,7 +17,7 @@ class Process(ProcessLogger, KeywordSettings):
     def __init__(self, job_post_path, keywords_path, template):
 
         preprocessor = FileToSentencePreprocessor()
-        preprocessor.preprocessing(job_post_path, template)
+        preprocessor.preprocess(job_post_path, template)
 
         self.loadKeywords(keywords_path)
         self.process()
