@@ -1,7 +1,7 @@
 from common.paths import *
 from common.utils import PICKLE_LOAD, PICKLE_SAVE
 from common.logging import ProcessLogger
-from settings import KeywordSettings
+from settings import KeywordsModelSettings
 from preprocessing import FileToSentencePreprocessor
 import pandas as pd
 import copy
@@ -13,7 +13,7 @@ REPLACE = {
 }
 
 
-class KeywordsModel(ProcessLogger, KeywordSettings):
+class KeywordsModel(ProcessLogger, KeywordsModelSettings):
     def __init__(self, job_post_path, keywords_path, template):
 
         preprocessor = FileToSentencePreprocessor()

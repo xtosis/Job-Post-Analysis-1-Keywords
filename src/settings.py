@@ -8,6 +8,6 @@ def PANDAS_DISPLAY_SETTINGS():
     pd.set_option('max_colwidth', 100)
 
 
-class KeywordSettings:
+class KeywordsModelSettings:
     def __init__(self):
-        self.process_name = 'Keywords'
+        self.model_name = 'KeywordsModel'
