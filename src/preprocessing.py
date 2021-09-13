@@ -354,12 +354,14 @@ class PreprocessingChecks:
 class FileToSentencePreprocessor(Preprocessing, PreprocessingChecks, SubProcessLogger):
 
     def __init__(self, to_strip=' /\\!.:#?-();,*+|$[]', strip_after='lowerring', auto_strip=True):
-        self.initialize_dataframes()
 
         # settings for stripSentencesThenAnalyze
         self.to_strip = to_strip
         self.strip_after = strip_after
         self.auto_strip = auto_strip
+
+        self.check_settings()
+        self.initialize_dataframes()
 
     def initialize_dataframes(self):
 
@@ -705,28 +707,14 @@ class FileToSentencePreprocessor(Preprocessing, PreprocessingChecks, SubProcessL
         # will contain unique stripped sentences and their subsequent stripped hashes
         data_unq_sentences_stripped = pd.DataFrame(columns=['stripped_hash', 'parent', 'flag_start', 'flag_end', 'sentence_stripped'])  # index: unstripped sentence hash
 
-        # --- making sure inputs to the function are valid -------------------
-
-        # early exit
-        if self.to_strip is None or self.strip_after is None:
-
-            # TODO LOGGING: info
-            print(f'{self.current_process} EARLY EXIT')
-
-            return previous_res
-
         # previous data auto selection deciding what version of the sentences to process
         if self.strip_after == 'lowerring':
             previous_data = previous_res['data_unq_sentences_lowered']
             previous_data = previous_data[pd.isnull(previous_data['parent'])]  # dropping children (duplicates)
             previous_data = previous_data['sentence_lowered']
 
-        elif self.strip_after == 'splitting':
+        else:  # splitting
             previous_data = previous_res['data_unq_sentences']['sentence']
-        else:
-
-            # TODO LOGGING: error
-            raise ValueError('param <strip_after> is not recognized')
 
         # --- processing -----------------------------------------------------
 
@@ -865,3 +853,22 @@ class FileToSentencePreprocessor(Preprocessing, PreprocessingChecks, SubProcessL
         previous_res['data_unq_sentences_stripped'] = data_unq_sentences_stripped
 
         return previous_res
+
+    def check_settings(self):
+
+        # --- stripSentencesThenAnalyze --------------------------------------
+
+        if not isinstance(self.to_strip, str):
+
+            # TODO LOGGING: error
+            raise TypeError('setting for splitSentencesThenAnalyze <to_strip> should be a string')
+
+        if not isinstance(self.strip_after, str):
+
+            # TODO LOGGING: error
+            raise TypeError('setting for splitSentencesThenAnalyze <strip_after> should be a string')
+
+        if self.strip_after not in ('lowerring', 'splitting'):
+
+            # TODO LOGGING: error
+            raise ValueError('param <strip_after> is not recognized')
