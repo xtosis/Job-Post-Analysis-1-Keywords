@@ -408,30 +408,6 @@ class FileToSentencePreprocessor(Preprocessing, PreprocessingChecks, SubProcessL
 
     # --- stages in preprocess: last to first --------------------------------
 
-    def loadData(self, path):
-
-        # --- initializations ------------------------------------------------
-        self.current_process = 'loadData'
-        raw = dict()
-
-        # --- processing -----------------------------------------------------
-        for file_name in os.listdir(path):
-            file_path = path + f'/{file_name}'
-            if os.path.isfile(file_path):
-                with open(file_path, 'r', encoding='utf-8') as f:
-                    file_text = f.read()
-                    file_hash = hashlib.md5(file_text.encode()).hexdigest()
-                    file_name = file_path.replace(PATH_DATA, '')
-                    raw[file_name] = file_text
-                    self.show_start_and_end('loaded', file_hash, file_name, file_text, 90)
-
-        # -- sorting file names
-        raw = pd.Series(raw, name='raw')
-        raw.sort_index(inplace=True)
-        raw = raw.to_dict()
-
-        return raw
-
     def indeedSamplesTemplateExtract(self, previous_map_files):
 
         # --- initializing ---------------------------------------------------
@@ -804,6 +780,30 @@ class FileToSentencePreprocessor(Preprocessing, PreprocessingChecks, SubProcessL
         previous_res['data_unq_sentences_stripped'] = data_unq_sentences_stripped
 
         return previous_res
+
+    def loadData(self, path):
+
+        # --- initializations ------------------------------------------------
+        self.current_process = 'loadData'
+        raw = dict()
+
+        # --- processing -----------------------------------------------------
+        for file_name in os.listdir(path):
+            file_path = path + f'/{file_name}'
+            if os.path.isfile(file_path):
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    file_text = f.read()
+                    file_hash = hashlib.md5(file_text.encode()).hexdigest()
+                    file_name = file_path.replace(PATH_DATA, '')
+                    raw[file_name] = file_text
+                    self.show_start_and_end('loaded', file_hash, file_name, file_text, 90)
+
+        # -- sorting file names
+        raw = pd.Series(raw, name='raw')
+        raw.sort_index(inplace=True)
+        raw = raw.to_dict()
+
+        return raw
 
     # --- stages in init method: last to first -------------------------------
 
