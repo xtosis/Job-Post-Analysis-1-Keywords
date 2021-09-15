@@ -458,6 +458,25 @@ class FileToSentencePreprocessor(Preprocessing, PreprocessingChecks, SubProcessL
             'lowered',  # --- sentence hash from lowerSentencesThenAnalyze
             'stripped'])  # - sentence hash from stripSentencesThenAnalyze (serves as sentence_id in models)
 
+    def check_settings(self):
+
+        # --- stripSentencesThenAnalyze --------------------------------------
+
+        if not isinstance(self.to_strip, str):
+
+            # TODO LOGGING: error
+            raise TypeError('setting for splitSentencesThenAnalyze <to_strip> should be a string')
+
+        if not isinstance(self.strip_after, str):
+
+            # TODO LOGGING: error
+            raise TypeError('setting for splitSentencesThenAnalyze <strip_after> should be a string')
+
+        if self.strip_after not in ('lowerring', 'splitting'):
+
+            # TODO LOGGING: error
+            raise ValueError('param <strip_after> is not recognized')
+
     # --- stages in preprocess: last to first --------------------------------
 
     def loadData(self, path):
@@ -856,22 +875,3 @@ class FileToSentencePreprocessor(Preprocessing, PreprocessingChecks, SubProcessL
         previous_res['data_unq_sentences_stripped'] = data_unq_sentences_stripped
 
         return previous_res
-
-    def check_settings(self):
-
-        # --- stripSentencesThenAnalyze --------------------------------------
-
-        if not isinstance(self.to_strip, str):
-
-            # TODO LOGGING: error
-            raise TypeError('setting for splitSentencesThenAnalyze <to_strip> should be a string')
-
-        if not isinstance(self.strip_after, str):
-
-            # TODO LOGGING: error
-            raise TypeError('setting for splitSentencesThenAnalyze <strip_after> should be a string')
-
-        if self.strip_after not in ('lowerring', 'splitting'):
-
-            # TODO LOGGING: error
-            raise ValueError('param <strip_after> is not recognized')
