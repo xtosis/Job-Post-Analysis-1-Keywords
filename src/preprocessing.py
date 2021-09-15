@@ -363,6 +363,8 @@ class FileToSentencePreprocessor(Preprocessing, PreprocessingChecks, SubProcessL
         self.check_settings()
         self.initialize_dataframes()
 
+    # --- stages in init method: last to first -------------------------------
+
     def initialize_dataframes(self):
 
         # this is the main dataframe that outputs all unique processed sentences and some basic
@@ -455,6 +457,8 @@ class FileToSentencePreprocessor(Preprocessing, PreprocessingChecks, SubProcessL
         print('dropped data report')
         print(self.dropped_data_report)
         # TODO LOGGING: info
+
+    # --- stages in preprocess: last to first --------------------------------
 
     def loadData(self, path):
 
