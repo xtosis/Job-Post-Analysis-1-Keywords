@@ -363,6 +363,49 @@ class FileToSentencePreprocessor(Preprocessing, PreprocessingChecks, SubProcessL
         self.check_settings()
         self.initialize_dataframes()
 
+    def preprocess(self, path, template):
+
+        raw = self.loadData(path)
+
+        # --- processing at file level ---------------------------------------
+
+        map_files = self.checkFiles(raw)
+        process_HTML = False
+
+        # templates
+        if template == 'indeed_samples':
+            map_files = self.indeedSamplesTemplateExtract(map_files)
+            process_HTML = True
+
+        # html
+        if process_HTML:
+            map_files = self.HTML_replacements(map_files)
+            tags = self.HTML_tags_get_list(map_files)
+            map_files = self.HTML_tags_replace_empty(map_files, tags)
+            map_files = self.HTML_tags_remove(map_files, tags)
+
+        map_files = self.final_clean_up(map_files)
+
+        # --- processing at sentence level -----------------------------------
+
+        sentence_data = self.splitSentencesThenAnalyze(map_files)
+        # processed = self.lowerSentencesThenAnalyze(processed)
+        # processed = self.stripSentencesThenAnalyze(processed, to_strip, strip_after, auto_strip)
+
+        # --- exit summary ---------------------------------------------------
+        # TODO LOGGING: info
+        self.history.sort_values(['sentence_id', 'seq'], inplace=True)
+        print('-' * 79)
+        print('history')
+        print(self.history)
+        print('-' * 79)
+        print('messages')
+        print(self.messages)
+        print('-' * 79)
+        print('dropped data report')
+        print(self.dropped_data_report)
+        # TODO LOGGING: info
+
     # --- stages in init method: last to first -------------------------------
 
     def initialize_dataframes(self):
@@ -414,49 +457,6 @@ class FileToSentencePreprocessor(Preprocessing, PreprocessingChecks, SubProcessL
             # index --------- sentence hash from splitSentencesThenAnalyze (serves as sentence_id in preprocessing only)
             'lowered',  # --- sentence hash from lowerSentencesThenAnalyze
             'stripped'])  # - sentence hash from stripSentencesThenAnalyze (serves as sentence_id in models)
-
-    def preprocess(self, path, template):
-
-        raw = self.loadData(path)
-
-        # --- processing at file level ---------------------------------------
-
-        map_files = self.checkFiles(raw)
-        process_HTML = False
-
-        # templates
-        if template == 'indeed_samples':
-            map_files = self.indeedSamplesTemplateExtract(map_files)
-            process_HTML = True
-
-        # html
-        if process_HTML:
-            map_files = self.HTML_replacements(map_files)
-            tags = self.HTML_tags_get_list(map_files)
-            map_files = self.HTML_tags_replace_empty(map_files, tags)
-            map_files = self.HTML_tags_remove(map_files, tags)
-
-        map_files = self.final_clean_up(map_files)
-
-        # --- processing at sentence level -----------------------------------
-
-        sentence_data = self.splitSentencesThenAnalyze(map_files)
-        # processed = self.lowerSentencesThenAnalyze(processed)
-        # processed = self.stripSentencesThenAnalyze(processed, to_strip, strip_after, auto_strip)
-
-        # --- exit summary ---------------------------------------------------
-        # TODO LOGGING: info
-        self.history.sort_values(['sentence_id', 'seq'], inplace=True)
-        print('-' * 79)
-        print('history')
-        print(self.history)
-        print('-' * 79)
-        print('messages')
-        print(self.messages)
-        print('-' * 79)
-        print('dropped data report')
-        print(self.dropped_data_report)
-        # TODO LOGGING: info
 
     # --- stages in preprocess: last to first --------------------------------
 
