@@ -406,77 +406,6 @@ class FileToSentencePreprocessor(Preprocessing, PreprocessingChecks, SubProcessL
         print(self.dropped_data_report)
         # TODO LOGGING: info
 
-    # --- stages in init method: last to first -------------------------------
-
-    def initialize_dataframes(self):
-
-        # this is the main dataframe that outputs all unique processed sentences and some basic
-        # hand engineered data
-        self.sentences = pd.DataFrame(columns=[
-            'sentence',  # ----- preprocessed sentence text
-            'n_words',  # ------ number of words
-            'n_commas',  # ----- number of commas
-            'word_first',  # --- first word of the sentence
-            'word_last',  # ---- last word of the sentence
-            'word_big',  # ----- biggest word of the sentence
-            'word_freq',  # ---- most frequent word of the sentece (None if all are repeated once)
-            'flag_start',  # --- non-alphanumeric character at the start of the sentence
-            'flag_end',  # ----- non-alphanumeric character at the end of the sentence
-        ])
-
-        # TODO: change this to only contain new formatting patterns (new character to be ignored, etc)
-        self.messages = pd.DataFrame(columns=[
-            'sentence_hash',  # --- md5 hash of original sentences (no lowering, stripping, etc)
-            'process',  # --------- e.g. 'stripStentencesThenAnalyze'
-            'stage',  # ----------- e.g. 'before stripping'
-            'level',  # ----------- e.g. 'warning', 'error', etc
-            'func',  # ------------ e.g. name of the checking fucntion
-            'message',  # --------- e.g. 'zero length'
-            'data'])  # ----------- e.g. {'before': '|raw sentence|', 'after': '|processed sentence|'}
-
-        # notes data about dropped files and sentences. reasons why a file or sentence might be dropped:
-        # - detected as a duplicate
-        # - length check failed
-        self.dropped_data_report = pd.DataFrame(columns=[
-            'target',  # name of the target table that it was supposed to be registered in
-            'id',  # the current id or would be id of the record
-            'process',
-            'stage',
-            'reason',
-            'data'])
-
-        # notes step by step processing of each sentence
-        self.history = pd.DataFrame(columns=[  # index: new hash of sentence after processing
-            'sentence_id',
-            'seq',  # process sequence number
-            'process',
-            'sentence'])
-
-        # notes all unique sentence hashes
-        self.hashes = pd.DataFrame(columns=[
-            # index --------- sentence hash from splitSentencesThenAnalyze (serves as sentence_id in preprocessing only)
-            'lowered',  # --- sentence hash from lowerSentencesThenAnalyze
-            'stripped'])  # - sentence hash from stripSentencesThenAnalyze (serves as sentence_id in models)
-
-    def check_settings(self):
-
-        # --- stripSentencesThenAnalyze --------------------------------------
-
-        if not isinstance(self.to_strip, str):
-
-            # TODO LOGGING: error
-            raise TypeError('setting for splitSentencesThenAnalyze <to_strip> should be a string')
-
-        if not isinstance(self.strip_after, str):
-
-            # TODO LOGGING: error
-            raise TypeError('setting for splitSentencesThenAnalyze <strip_after> should be a string')
-
-        if self.strip_after not in ('lowerring', 'splitting'):
-
-            # TODO LOGGING: error
-            raise ValueError('param <strip_after> is not recognized')
-
     # --- stages in preprocess: last to first --------------------------------
 
     def loadData(self, path):
@@ -875,3 +804,74 @@ class FileToSentencePreprocessor(Preprocessing, PreprocessingChecks, SubProcessL
         previous_res['data_unq_sentences_stripped'] = data_unq_sentences_stripped
 
         return previous_res
+
+    # --- stages in init method: last to first -------------------------------
+
+    def initialize_dataframes(self):
+
+        # this is the main dataframe that outputs all unique processed sentences and some basic
+        # hand engineered data
+        self.sentences = pd.DataFrame(columns=[
+            'sentence',  # ----- preprocessed sentence text
+            'n_words',  # ------ number of words
+            'n_commas',  # ----- number of commas
+            'word_first',  # --- first word of the sentence
+            'word_last',  # ---- last word of the sentence
+            'word_big',  # ----- biggest word of the sentence
+            'word_freq',  # ---- most frequent word of the sentece (None if all are repeated once)
+            'flag_start',  # --- non-alphanumeric character at the start of the sentence
+            'flag_end',  # ----- non-alphanumeric character at the end of the sentence
+        ])
+
+        # TODO: change this to only contain new formatting patterns (new character to be ignored, etc)
+        self.messages = pd.DataFrame(columns=[
+            'sentence_hash',  # --- md5 hash of original sentences (no lowering, stripping, etc)
+            'process',  # --------- e.g. 'stripStentencesThenAnalyze'
+            'stage',  # ----------- e.g. 'before stripping'
+            'level',  # ----------- e.g. 'warning', 'error', etc
+            'func',  # ------------ e.g. name of the checking fucntion
+            'message',  # --------- e.g. 'zero length'
+            'data'])  # ----------- e.g. {'before': '|raw sentence|', 'after': '|processed sentence|'}
+
+        # notes data about dropped files and sentences. reasons why a file or sentence might be dropped:
+        # - detected as a duplicate
+        # - length check failed
+        self.dropped_data_report = pd.DataFrame(columns=[
+            'target',  # name of the target table that it was supposed to be registered in
+            'id',  # the current id or would be id of the record
+            'process',
+            'stage',
+            'reason',
+            'data'])
+
+        # notes step by step processing of each sentence
+        self.history = pd.DataFrame(columns=[  # index: new hash of sentence after processing
+            'sentence_id',
+            'seq',  # process sequence number
+            'process',
+            'sentence'])
+
+        # notes all unique sentence hashes
+        self.hashes = pd.DataFrame(columns=[
+            # index --------- sentence hash from splitSentencesThenAnalyze (serves as sentence_id in preprocessing only)
+            'lowered',  # --- sentence hash from lowerSentencesThenAnalyze
+            'stripped'])  # - sentence hash from stripSentencesThenAnalyze (serves as sentence_id in models)
+
+    def check_settings(self):
+
+        # --- stripSentencesThenAnalyze --------------------------------------
+
+        if not isinstance(self.to_strip, str):
+
+            # TODO LOGGING: error
+            raise TypeError('setting for splitSentencesThenAnalyze <to_strip> should be a string')
+
+        if not isinstance(self.strip_after, str):
+
+            # TODO LOGGING: error
+            raise TypeError('setting for splitSentencesThenAnalyze <strip_after> should be a string')
+
+        if self.strip_after not in ('lowerring', 'splitting'):
+
+            # TODO LOGGING: error
+            raise ValueError('param <strip_after> is not recognized')
