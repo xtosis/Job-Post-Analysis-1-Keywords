@@ -448,26 +448,6 @@ class FileToSentencePreprocessor(Preprocessing, PreprocessingChecks, SubProcessL
 
         return current_map_files
 
-    def checkFiles(self, raw):
-
-        # --- initializing ---------------------------------------------------
-        self.current_process = 'checkFiles'
-
-        map_file_names = dict()  # map_file_names[file_hash] = file_name
-        map_file_texts = dict()  # map_file_texts[file_hash] = file_text
-
-        # --- processing -----------------------------------------------------
-        for file_name, file_text in raw.items():
-            file_hash = hashlib.md5(file_text.encode()).hexdigest()
-            register = self.check_file(map_file_names, file_name, file_hash, file_text, 'map_file_texts')
-            if register:
-                map_file_names[file_hash] = file_name
-                map_file_texts[file_hash] = file_text
-
-        current_map_files = {'texts': map_file_texts, 'names': map_file_names}
-
-        return current_map_files
-
     def splitSentencesThenAnalyze(self, map_files):
 
         # --- initializing ---------------------------------------------------
@@ -780,6 +760,26 @@ class FileToSentencePreprocessor(Preprocessing, PreprocessingChecks, SubProcessL
         previous_res['data_unq_sentences_stripped'] = data_unq_sentences_stripped
 
         return previous_res
+
+    def checkFiles(self, raw):
+
+        # --- initializing ---------------------------------------------------
+        self.current_process = 'checkFiles'
+
+        map_file_names = dict()  # map_file_names[file_hash] = file_name
+        map_file_texts = dict()  # map_file_texts[file_hash] = file_text
+
+        # --- processing -----------------------------------------------------
+        for file_name, file_text in raw.items():
+            file_hash = hashlib.md5(file_text.encode()).hexdigest()
+            register = self.check_file(map_file_names, file_name, file_hash, file_text, 'map_file_texts')
+            if register:
+                map_file_names[file_hash] = file_name
+                map_file_texts[file_hash] = file_text
+
+        current_map_files = {'texts': map_file_texts, 'names': map_file_names}
+
+        return current_map_files
 
     def loadData(self, path):
 
