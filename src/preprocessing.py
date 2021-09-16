@@ -408,46 +408,6 @@ class FileToSentencePreprocessor(Preprocessing, PreprocessingChecks, SubProcessL
 
     # --- stages in preprocess: last to first --------------------------------
 
-    def indeedSamplesTemplateExtract(self, previous_map_files):
-
-        # --- initializing ---------------------------------------------------
-        self.current_process = 'indeedSamplesTemplateExtract'
-
-        map_file_names = dict()  # map_file_names[file_hash] = file_name
-        map_file_texts = dict()  # map_file_texts[file_hash] = file_text
-
-        # --- processing -----------------------------------------------------
-        for previous_file_hash, file_text in previous_map_files['texts'].items():
-
-            # sample files format: prefix and suffix
-            file_text = self.remove_prefix(file_text, "['")
-            file_text = self.remove_suffix(file_text, "']")
-
-            # indeed posts format: prefix and suffix
-            file_text = self.remove_prefix(file_text, '<div id="jobDescriptionText" class="jobsearch-jobDescriptionText">')
-            file_text = self.remove_suffix(file_text, '</div>')
-
-            # indeed posts format: some posts are still enclosed in div containers
-            while file_text.find('<div>') == 0:
-                if file_text[-6:] == '</div>':
-                    file_text = self.remove_prefix(file_text, '<div>', ignore=True)
-                    file_text = self.remove_suffix(file_text, '</div>', ignore=True)
-                else:
-                    break
-
-            # --- checking file length ---------------------------------------
-            file_name = previous_map_files['names'][previous_file_hash]
-            file_hash = hashlib.md5(file_text.encode()).hexdigest()
-            self.show_start_and_end('text-extracted', file_hash, file_name, file_text, 90)
-            register = self.check_file(map_file_names, file_name, file_hash, file_text, 'map_file_texts')
-            if register:
-                map_file_names[file_hash] = file_name
-                map_file_texts[file_hash] = file_text
-
-        current_map_files = {'texts': map_file_texts, 'names': map_file_names}
-
-        return current_map_files
-
     def splitSentencesThenAnalyze(self, map_files):
 
         # --- initializing ---------------------------------------------------
@@ -760,6 +720,46 @@ class FileToSentencePreprocessor(Preprocessing, PreprocessingChecks, SubProcessL
         previous_res['data_unq_sentences_stripped'] = data_unq_sentences_stripped
 
         return previous_res
+
+    def indeedSamplesTemplateExtract(self, previous_map_files):
+
+        # --- initializing ---------------------------------------------------
+        self.current_process = 'indeedSamplesTemplateExtract'
+
+        map_file_names = dict()  # map_file_names[file_hash] = file_name
+        map_file_texts = dict()  # map_file_texts[file_hash] = file_text
+
+        # --- processing -----------------------------------------------------
+        for previous_file_hash, file_text in previous_map_files['texts'].items():
+
+            # sample files format: prefix and suffix
+            file_text = self.remove_prefix(file_text, "['")
+            file_text = self.remove_suffix(file_text, "']")
+
+            # indeed posts format: prefix and suffix
+            file_text = self.remove_prefix(file_text, '<div id="jobDescriptionText" class="jobsearch-jobDescriptionText">')
+            file_text = self.remove_suffix(file_text, '</div>')
+
+            # indeed posts format: some posts are still enclosed in div containers
+            while file_text.find('<div>') == 0:
+                if file_text[-6:] == '</div>':
+                    file_text = self.remove_prefix(file_text, '<div>', ignore=True)
+                    file_text = self.remove_suffix(file_text, '</div>', ignore=True)
+                else:
+                    break
+
+            # --- checking file length ---------------------------------------
+            file_name = previous_map_files['names'][previous_file_hash]
+            file_hash = hashlib.md5(file_text.encode()).hexdigest()
+            self.show_start_and_end('text-extracted', file_hash, file_name, file_text, 90)
+            register = self.check_file(map_file_names, file_name, file_hash, file_text, 'map_file_texts')
+            if register:
+                map_file_names[file_hash] = file_name
+                map_file_texts[file_hash] = file_text
+
+        current_map_files = {'texts': map_file_texts, 'names': map_file_names}
+
+        return current_map_files
 
     def checkFiles(self, raw):
 
