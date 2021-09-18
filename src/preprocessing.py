@@ -721,6 +721,52 @@ class FileToSentencePreprocessor(Preprocessing, PreprocessingChecks, SubProcessL
 
         return previous_res
 
+    def register_sentence(self, s_text, s_id_new, s_id_old, s_stats=None):
+        '''
+        checks if a sentence is a duplicate and registers it accordingly
+
+        inputs:
+        -------
+            explicit
+                s_text ----- (str) new sentence text
+                s_id_new --- (str) new hash of the sentence
+                s_id_old --- (str) old hash of the sentence
+                s_stats ---- (dict) sentence statistics for self.sentences:
+                                        - n_words
+                                        - n_commas
+                                        - word_first
+                                        - word_last
+                                        - ...
+            implicit
+                self.current_process
+                self.dropped_data_report
+                self.hashes
+                self.history
+                self.sentences
+
+        outputs:
+        --------
+            explicit
+                registered_as_original --- (bool)
+            implicit
+                if dupplicate:
+                    self.dropped_data_report
+                if original:
+                    self.hashes ------
+                    self.history ----- registers the new sentence text
+                    self.sentences --- registers the new sentence
+        '''
+
+        # --- initializations ------------------------------------------------
+        registered_as_original = False
+        process_sequence = None
+
+        # --- checking duplicity ---------------------------------------------
+        # --- registering as duplicate ---------------------------------------
+        # --- registering as original ----------------------------------------
+
+        return registered_as_original
+
     # --- stages in preprocess part 1 (files): last to first -----------------
 
     def indeedSamplesTemplateExtract(self, previous_map_files):
