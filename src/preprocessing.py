@@ -406,7 +406,7 @@ class FileToSentencePreprocessor(Preprocessing, PreprocessingChecks, SubProcessL
         print(self.dropped_data_report)
         # TODO LOGGING: info
 
-    # --- stages in preprocess: last to first --------------------------------
+    # --- stages in preprocess part 2 (sentences): first to last -------------
 
     def splitSentencesThenAnalyze(self, map_files):
 
@@ -720,6 +720,8 @@ class FileToSentencePreprocessor(Preprocessing, PreprocessingChecks, SubProcessL
         previous_res['data_unq_sentences_stripped'] = data_unq_sentences_stripped
 
         return previous_res
+
+    # --- stages in preprocess part 1 (files): last to first -----------------
 
     def indeedSamplesTemplateExtract(self, previous_map_files):
 
