@@ -721,17 +721,17 @@ class FileToSentencePreprocessor(Preprocessing, PreprocessingChecks, SubProcessL
 
         return previous_res
 
-    def register_sentence(self, s_text, s_id_new, s_id_old, s_stats=None):
+    def register_sentence(self, s_text, s_hash, s_id='same', s_stats=None):
         '''
         checks if a sentence is a duplicate and registers it accordingly
 
         inputs:
         -------
             explicit
-                s_text ----- (str) new sentence text
-                s_id_new --- (str) new hash of the sentence
-                s_id_old --- (str) old hash of the sentence
-                s_stats ---- (dict) sentence statistics for self.sentences:
+                s_text ---- (str) new sentence text
+                s_id ------ (str) sentence id (used to locate rows in implicit inputs)
+                s_hash ---- (str) sentence hash after processing
+                s_stats --- (dict) sentence statistics for self.sentences:
                                         - n_words
                                         - n_commas
                                         - word_first
@@ -760,6 +760,8 @@ class FileToSentencePreprocessor(Preprocessing, PreprocessingChecks, SubProcessL
         # --- initializations ------------------------------------------------
         registered_as_original = False
         process_sequence = None
+        if s_id == 'same':
+            s_id = s_id_new
 
         # --- checking duplicity ---------------------------------------------
         # --- registering as duplicate ---------------------------------------
