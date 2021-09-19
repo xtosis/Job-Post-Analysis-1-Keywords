@@ -360,6 +360,13 @@ class FileToSentencePreprocessor(Preprocessing, PreprocessingChecks, SubProcessL
         self.strip_after = strip_after
         self.auto_strip = auto_strip
 
+        # sentence preprocessing sequence
+        self.sentence_preprocessing_sequence = {
+            'splitSentencesThenAnalyze': 1,
+            'lowerSentencesThenAnalyze': 2,
+            'stripSentencesThenAnalyze': 3,
+        }
+
         self.check_settings()
         self.initialize_dataframes()
 
@@ -738,6 +745,7 @@ class FileToSentencePreprocessor(Preprocessing, PreprocessingChecks, SubProcessL
                                         - word_last
                                         - ...
             implicit
+                self.sentence_preprocessing_sequence
                 self.current_process
                 self.dropped_data_report
                 self.hashes
@@ -759,7 +767,7 @@ class FileToSentencePreprocessor(Preprocessing, PreprocessingChecks, SubProcessL
 
         # --- initializations ------------------------------------------------
         registered_as_original = False
-        process_sequence = None
+        process_sequence = self.sentence_preprocessing_sequence[self.current_process]
         if s_id == 'same':
             s_id = s_id_new
 
