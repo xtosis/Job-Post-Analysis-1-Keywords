@@ -910,10 +910,10 @@ class FileToSentencePreprocessor(Preprocessing, PreprocessingChecks, SubProcessL
             'sentence'])
 
         # notes all unique sentence hashes
-        self.hashes = pd.DataFrame(columns=[
-            # index --------- sentence hash from splitSentencesThenAnalyze (serves as sentence_id in preprocessing only)
-            'lowered',  # --- sentence hash from lowerSentencesThenAnalyze
-            'stripped'])  # - sentence hash from stripSentencesThenAnalyze (serves as sentence_id in models)
+        self.hashes = pd.DataFrame(columns=[  # index: sentence hash from splitSentencesThenAnalyze + '_p' (serves as sentence_id in preprocessing only)
+            'process_1',  # --- sentence hash from splitSentencesThenAnalyze
+            'process_2',  # --- sentence hash from lowerSentencesThenAnalyze
+            'process_3'])  # -- sentence hash from stripSentencesThenAnalyze (serves as sentence_id in models)
 
     def check_settings(self):
 
