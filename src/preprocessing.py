@@ -250,8 +250,8 @@ class PreprocessingChecks:
 
         return res
 
-    def check_duplicity(self, data, name, sent_hash, sent):
-        stage = 'checking-duplicity'
+    def check_sentence_hash(self, data, name, sent_hash, sent):
+        stage = 'check-sentence-hash'
         original = None
 
         # filtering for duplicate sent_hashes
