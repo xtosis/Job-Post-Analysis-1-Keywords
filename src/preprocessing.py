@@ -250,40 +250,31 @@ class PreprocessingChecks:
 
         return res
 
-    def check_sentence_hash(self, data, name, sent_hash, sent):
-        stage = 'check-sentence-hash'
+    def check_sentence_hash(self, name, s_text, s_hash, s_id):
+
+        # --- initializations ------------------------------------------------
+        stage = 'checking-duplicity'
         original = None
+        process_sequence = self.sentence_preprocessing_sequence[self.current_process]
 
-        # filtering for duplicate sent_hashes
-        fil = copy.deepcopy(data.query(f'{name}_hash == "{sent_hash}"'))
+        # --- finding duplicate hashes ---------------------------------------
+        fil = copy.deepcopy(self.hashes.query(f'process_{process_sequence} == "{s_hash}"'))
 
-        # has a unique sent_hash
+        # --- sentence is unique ---------------------------------------------
         if len(fil) == 0:
 
             # TODO LOGGING: debug
-            print(f'{self.current_process} {sent_hash} [{stage}] UNQ: {sent}')
+            print(f'{self.current_process} {s_id} [{stage}] UNQ: {s_text}')
 
-        # has a duplicate sent_hash
+        # --- sentence is a duplicate ----------------------------------------
         else:
 
-            # TODO LOGGING: debug
-            print(f'{self.current_process} {sent_hash} [{stage}] DUP: {sent}')
-
-            # getting parent sent_hash
+            # getting id of parent
             original = fil.index.values[0]
 
             # TODO LOGGING: debug
-            print(f'{self.current_process} {sent_hash} [{stage}] parent: {original}')
-
-            # updating dropped data report --------------------------------------
-            self.dropped_data_report = self.dropped_data_report.append({
-                'target': f'data_unq_sentences_{name}',
-                'id': sent_hash,
-                'process': self.current_process,
-                'stage': stage,
-                'reason': 'duplicate',
-                'data': {'parent': original, f'sentence_{name}': f'|{sent}|'},
-            }, ignore_index=True)
+            print(f'{self.current_process} {s_id} [{stage}] DUP: {s_text}')
+            print(f'{self.current_process} {s_id} [{stage}] parent: {original}')
 
         return original
 
