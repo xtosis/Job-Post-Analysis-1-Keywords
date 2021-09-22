@@ -273,7 +273,7 @@ class PreprocessingChecks:
         '''
 
         # --- initializations ------------------------------------------------
-        stage = 'checking-duplicity'
+        stage = 'check_sentence_hash'
         original = None
         process_sequence = self.sentence_preprocessing_sequence[self.current_process]
 
@@ -780,10 +780,26 @@ class FileToSentencePreprocessor(Preprocessing, PreprocessingChecks, SubProcessL
         registered_as_original = False
         process_sequence = self.sentence_preprocessing_sequence[self.current_process]
         if s_id == 'same':
-            s_id = s_id_new
+            s_id = s_hash + '_p'
 
-        # --- checking duplicity ---------------------------------------------
+        # --- checking sentence hash -----------------------------------------
+        original = self.check_sentence_hash(s_text, s_hash, s_id)
+
         # --- registering as duplicate ---------------------------------------
+        if original is not None:
+
+            # registering sentence drop
+            self.dropped_data_report = self.dropped_data_report.append({
+                'target': 'hashes, history & sentences',
+                'id': s_id,
+                'process': self.current_process,
+                'stage': 'check_sentence_hash',
+                'reason': 'duplicate',
+                'data': {'text': f'|{s_text}|', 'parent': original}
+            }, ignore_index=True)
+
+            # TODO: drop sentence
+
         # --- registering as original ----------------------------------------
 
         return registered_as_original
