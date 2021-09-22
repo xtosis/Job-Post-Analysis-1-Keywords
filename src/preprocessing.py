@@ -250,7 +250,27 @@ class PreprocessingChecks:
 
         return res
 
-    def check_sentence_hash(self, name, s_text, s_hash, s_id):
+    def check_sentence_hash(self, s_text, s_hash, s_id):
+        '''
+        checks if sentence hash is unique
+
+        inputs:
+        -------
+            explicit
+                s_text --- (str) new sentence text
+                s_hash --- (str) sentence hash after processing
+                s_id ----- (str) sentence id (used to locate rows in implicit inputs)
+
+            implicit
+                self.sentence_preprocessing_sequence
+                self.current_process
+                self.hashes
+
+        outputs:
+        --------
+            explicit
+                original --- (str) id of parent or None if sentence hash is unique
+        '''
 
         # --- initializations ------------------------------------------------
         stage = 'checking-duplicity'
