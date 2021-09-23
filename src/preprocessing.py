@@ -908,6 +908,12 @@ class FileToSentencePreprocessor(Preprocessing, PreprocessingChecks, SubProcessL
             'flag_end',  # ----- non-alphanumeric character at the end of the sentence
         ])
 
+        # specifies which unique sentence appeared at what line number in every unique file
+        self.map_lines = pd.DataFrame(columns=[  # index: arbitrary
+            'file_hash',     # file hash
+            'id_s',          # line number of the sentence
+            'sentence_id'])  # sentence hash
+
         # TODO: change this to only contain new formatting patterns (new character to be ignored, etc)
         self.messages = pd.DataFrame(columns=[
             'sentence_hash',  # --- md5 hash of original sentences (no lowering, stripping, etc)
